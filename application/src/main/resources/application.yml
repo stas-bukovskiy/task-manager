@@ -1,0 +1,6 @@
+server:
+  port: ${APP_PORT}
+
+spring:
+  profiles:
+    include: config, common
