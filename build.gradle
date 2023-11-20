@@ -38,6 +38,9 @@ subprojects {
 		implementation 'org.springframework.boot:spring-boot-starter'
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+		implementation 'org.springframework.boot:spring-boot-starter-artemis'
+		runtimeOnly 'org.apache.activemq:artemis-jakarta-server'
+
 		compileOnly "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		testCompileOnly "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		annotationProcessor "org.projectlombok:lombok:${rootProject.lombokVersion}"
