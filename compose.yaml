@@ -1,9 +1,9 @@
 version: "3.9"
 
 services:
-  abbitmq:
+  task-manager-msg-broker:
     image: rabbitmq:3-management-alpine
-    container_name: 'rabbitmq'
+    container_name: 'task-manager-msg-broker'
     ports:
       - "${RABBITMQ_PORT}:5672"
       - "15672:15672"
