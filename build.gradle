@@ -1,5 +1,7 @@
 ext {
 	lombokVersion = '1.18.24'
+	rabbitmqVersion = '5.20.0'
+	reactiveRabbitmqVersion = '1.5.6'
 }
 
 buildscript {
@@ -38,13 +40,15 @@ subprojects {
 		implementation 'org.springframework.boot:spring-boot-starter'
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-		implementation 'org.springframework.boot:spring-boot-starter-artemis'
-		runtimeOnly 'org.apache.activemq:artemis-jakarta-server'
-
 		compileOnly "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		testCompileOnly "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		annotationProcessor "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		testAnnotationProcessor "org.projectlombok:lombok:${rootProject.lombokVersion}"
+
+		implementation 'org.springframework.boot:spring-boot-starter-amqp'
+		implementation 'org.springframework.boot:spring-boot-starter-webflux'
+		implementation "io.projectreactor.rabbitmq:reactor-rabbitmq:${rootProject.reactiveRabbitmqVersion}"
+		implementation "com.rabbitmq:amqp-client:${rootProject.rabbitmqVersion}"
 	}
 
 	test {
