@@ -2,11 +2,13 @@ package org.tasker.common.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.tasker.common.input.event.SampleConsumer;
 import org.tasker.common.output.event.SampleProducer;
 
+@Profile("!test")
 @Component
 @RequiredArgsConstructor
 public class ApplicationStartup {

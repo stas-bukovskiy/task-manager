@@ -2,6 +2,9 @@ ext {
 	lombokVersion = '1.18.24'
 	rabbitmqVersion = '5.20.0'
 	reactiveRabbitmqVersion = '1.5.6'
+	r2dbcPostgresVersion = '1.0.1.RELEASE'
+	postgresVersion = '42.7.0'
+	testcontainersVersion = "1.19.3"
 }
 
 buildscript {
@@ -44,6 +47,18 @@ subprojects {
 		testCompileOnly "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		annotationProcessor "org.projectlombok:lombok:${rootProject.lombokVersion}"
 		testAnnotationProcessor "org.projectlombok:lombok:${rootProject.lombokVersion}"
+
+		implementation 'org.springframework.boot:spring-boot-starter-amqp'
+		implementation "io.projectreactor.rabbitmq:reactor-rabbitmq:${rootProject.reactiveRabbitmqVersion}"
+		implementation "com.rabbitmq:amqp-client:${rootProject.rabbitmqVersion}"
+
+		implementation 'org.springframework.boot:spring-boot-starter-webflux'
+		implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+		implementation "org.postgresql:r2dbc-postgresql:${rootProject.r2dbcPostgresVersion}"
+		implementation "org.postgresql:postgresql:${rootProject.postgresVersion}"
+		implementation "io.r2dbc:r2dbc-pool:${rootProject.r2dbcPostgresVersion}"
+
+		testImplementation 'io.projectreactor:reactor-test'
 
 		implementation 'org.springframework.boot:spring-boot-starter-amqp'
 		implementation 'org.springframework.boot:spring-boot-starter-webflux'

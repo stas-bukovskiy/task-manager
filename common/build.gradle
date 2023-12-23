@@ -1,3 +1,7 @@
 dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-json"
 
+    testImplementation "org.testcontainers:junit-jupiter:${rootProject.testcontainersVersion}"
+    testImplementation "org.testcontainers:r2dbc:${rootProject.testcontainersVersion}"
+    testImplementation "org.testcontainers:postgresql:${rootProject.testcontainersVersion}"
 }

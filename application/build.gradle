@@ -1,4 +1,6 @@
 dependencies {
     implementation project(":common")
     implementation project(":config")
+    implementation project(":updates")
+    implementation project(":auth")
 }
