@@ -1,28 +1,31 @@
 package org.tasker.common.output.event;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+import reactor.rabbitmq.OutboundMessage;
+import reactor.rabbitmq.QueueSpecification;
+import reactor.rabbitmq.Sender;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class SampleProducer {
 
-    private final JmsTemplate jmsTemplate;
-
-    @Autowired
-    public SampleProducer(JmsTemplate jmsTemplate) {
-        this.jmsTemplate = jmsTemplate;
-    }
+    private final Sender sender;
 
     public void sendMessage() {
-        String destination = "sample";
+        String queue = "sample";
         String message = "Hello, JMS!";
 
-        log.info("Sending message: {}", message);
+        Publisher<OutboundMessage> outbound = Mono.just(new OutboundMessage("", queue, message.getBytes()));
 
-        jmsTemplate.convertAndSend(destination, message);
+        sender.declareQueue(QueueSpecification.queue(queue))
+                .then(sender.send(outbound))
+                .doOnSubscribe(s -> log.info("Sending message: {}", message))
+                .doOnError(e -> log.error("Error sending message", e))
+                .subscribe();
     }
 }

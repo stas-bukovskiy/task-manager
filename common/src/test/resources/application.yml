@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: test
+  r2dbc:
+    url: r2dbc:tc:postgresql:///testdb?TC_IMAGE_TAG=14-alpine
+
+  main:
+    allow-bean-definition-overriding: true
+logging:
+  level:
+    io.r2dbc.postgresql.QUERY: debug
+    io.r2dbc.postgresql.PARAM: debug
+
+es:
+  snapshot:
+    frequency: 3

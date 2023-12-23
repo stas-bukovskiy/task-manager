@@ -2,20 +2,22 @@ package org.tasker.common.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.tasker.common.input.event.SampleConsumer;
 import org.tasker.common.output.event.SampleProducer;
 
+@Profile("!test")
 @Component
 @RequiredArgsConstructor
 public class ApplicationStartup {
 
     private final SampleProducer sampleProducer;
+    private final SampleConsumer sampleConsumer;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void onApplicationReady() {
-        // This method will be invoked when the application is ready
-        // You can perform any initialization tasks here
+    public void startProducer() {
         Thread producerThread = new Thread(() -> {
             while (true) {
                 sampleProducer.sendMessage();
@@ -28,6 +30,11 @@ public class ApplicationStartup {
         });
 
         producerThread.start();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void startConsumer() {
+        sampleConsumer.processMessage();
     }
 
 }
