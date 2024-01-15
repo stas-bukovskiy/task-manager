@@ -1,0 +1,9 @@
+jwt:
+  secret: k1opdcs23Kospos023dklsSD23ldsadpm23lasdDSamlxk
+  expiration: 86400000ms
+
+communication:
+  auth:
+    request-queue: auth-request-queue
+    request-exchange: auth-request-exchange
+    response-exchange: auth-response-exchange

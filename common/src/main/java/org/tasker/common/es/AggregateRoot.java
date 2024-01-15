@@ -28,7 +28,6 @@ public abstract class AggregateRoot {
         this.type = aggregateType;
     }
 
-
     public abstract void when(final Event event);
 
     public void load(final List<Event> events) {
@@ -83,7 +82,4 @@ public abstract class AggregateRoot {
                 .build();
     }
 
-    public long getVersion() {
-        return version;
-    }
 }

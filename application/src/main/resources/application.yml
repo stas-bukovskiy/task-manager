@@ -1,6 +1,8 @@
-server:
-  port: ${APP_PORT}
-
 spring:
   profiles:
-    include: dev, common
+    active:
+      - dev
+      - auth
+      - common
+      - updates
+      - config

@@ -41,3 +41,11 @@ CREATE TABLE IF NOT EXISTS snapshots
 );
 
 CREATE INDEX IF NOT EXISTS aggregate_id_aggregate_version_idx ON snapshots USING btree (aggregate_id, version);
+
+-- create reservation tables
+CREATE TABLE IF NOT EXISTS username_email_reservation
+(
+    aggregate_id VARCHAR(255) PRIMARY KEY,
+    email        VARCHAR(255) UNIQUE,
+    username     VARCHAR(255) UNIQUE
+);

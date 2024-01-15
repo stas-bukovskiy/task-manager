@@ -44,7 +44,7 @@ public class EventStore implements EventStoreDB {
                         return this.saveSnapshot(aggregate);
                     }
                     return Mono.empty();
-                })).then(Mono.fromRunnable(() -> eventBus.publish(aggregateEvents)));
+                })).then(eventBus.publish(aggregateEvents));
     }
 
     @Override
@@ -75,8 +75,9 @@ public class EventStore implements EventStoreDB {
                             .fetch()
                             .rowsUpdated();
                 })
+                .reduce(0L, Long::sum)
                 .doOnError(throwable -> log.error("(saveEvents) error saving events", throwable))
-                .doOnSubscribe(result -> log.debug("(saveEvents) saved events: {}", result))
+                .doOnSuccess(result -> log.debug("(saveEvents) saved events: {}", result))
                 .then();
     }
 

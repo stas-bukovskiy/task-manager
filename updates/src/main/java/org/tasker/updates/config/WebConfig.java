@@ -20,7 +20,9 @@ public class WebConfig implements WebFluxConfigurer {
     @Bean
     RouterFunction<ServerResponse> routerFunction(AuthHandler handler) {
         return route()
-                .POST("api/v1/auth/sign-up", accept(APPLICATION_JSON), handler::register)
+                .POST("api/v1/auth/sign-up", accept(APPLICATION_JSON), handler::registerNewUser)
+                .POST("api/v1/auth/sign-in", accept(APPLICATION_JSON), handler::loginUser)
+                .POST("api/v1/auth/verify", accept(APPLICATION_JSON), handler::verifyToken)
                 .build();
     }
 

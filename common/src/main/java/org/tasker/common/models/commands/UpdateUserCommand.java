@@ -1,18 +1,18 @@
-package org.tasker.common.models.command;
+package org.tasker.common.models.commands;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-public record RegisterNewUserCommand(
+public record UpdateUserCommand(
         @JsonProperty("aggregate_id")
         String aggregateID,
+
         String username,
-        String email,
-        String password,
         @JsonProperty("first_name")
         String firstName,
         @JsonProperty("last_name")
         String lastName
 ) {
+    public static final String COMMAND_NAME = "update_user_info";
 }
