@@ -1,0 +1,36 @@
+server:
+  port: ${APP_PORT}
+
+---
+spring:
+  config:
+    import: optional:file:.dev.env[.properties]
+    activate:
+      on-profile: dev
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:rabbitmq}
+    password: ${RABBITMQ_DEFAULT_PASS:rabbitmq}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    password: ${POSTGRES_PASSWORD}
+    username: ${POSTGRES_USER}
+  data:
+    mongodb:
+      host: ${MONGO_HOST:localhost}
+      port: ${MONGO_PORT:27017}
+      database: ${MONGO_DB:tasker}
+      username: ${MONGO_USER:mongo}
+      password: ${MONGO_PASSWORD:mongo}
+
+es:
+  snapshot:
+    frequency: 5
+
+logging:
+  level:
+    org.tasker: debug

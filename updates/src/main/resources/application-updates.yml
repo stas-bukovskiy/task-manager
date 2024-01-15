@@ -1,0 +1,5 @@
+communication:
+  auth:
+    request-exchange: auth-request-exchange
+    response-exchange: auth-response-exchange
+    response-queue: auth-response-queue

@@ -3,14 +3,8 @@ package org.tasker.common.es;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.tasker.common.es.Constants.EVENTS;
-
-public class EventSourcingUtils {
+public final class EventSourcingUtils {
     private EventSourcingUtils() {
-    }
-
-    public static String getAggregateTypeTopic(final String aggregateType) {
-        return String.format("%s_%s", aggregateType, EVENTS);
     }
 
     public static <T extends AggregateRoot> Snapshot snapshotFromAggregate(final T aggregate) {

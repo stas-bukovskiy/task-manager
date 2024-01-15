@@ -1,6 +1,0 @@
-server:
-  port: ${APP_PORT}
-
-spring:
-  profiles:
-    include: dev, common
