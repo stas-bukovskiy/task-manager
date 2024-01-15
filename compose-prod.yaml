@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  task-manager-backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - APP_PORT=${APP_PORT}
+        - VERSION=${VERSION}
+    container_name: 'backend'
+    env_file:
+      - ./.docker.env
+    ports:
+      - "${APP_OUTBOUND_PORT}:${APP_PORT}"
+    depends_on:
+      - task-manager-msg-broker
+      - task-manager-db
+      - task-manager-mongodb
+
+  task-manager-msg-broker:
+    image: rabbitmq:3-management-alpine
+    container_name: 'message-broker'
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "15672:15672"
+    env_file:
+      - ./.docker.env
+    volumes:
+      - task-manager-msg-broker:/var/lib/rabbitmq/
+      - task-manager-msg-broker:/var/log/rabbitmq
+
+  task-manager-db:
+    image: postgres:15
+    container_name: "postgres"
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    env_file:
+      - ./.docker.env
+    volumes:
+      - task-manager-db:/var/lib/postgresql/data/
+      - task-manager-db:/var/log/postgresql/
+
+  task-manager-mongodb:
+    image: mongo:7.0
+    container_name: 'mongodb'
+    env_file:
+      - ./.docker.env
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - task-manager-mongodb:/data/db
+
+volumes:
+  task-manager-mongodb:
+    driver: local
+  task-manager-msg-broker:
+    driver: local
+  task-manager-db:
+    driver: local
