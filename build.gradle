@@ -1,10 +1,11 @@
 ext {
-	lombokVersion = '1.18.24'
+	lombokVersion = '1.18.30'
 	rabbitmqVersion = '5.20.0'
 	reactiveRabbitmqVersion = '1.5.6'
 	r2dbcPostgresVersion = '1.0.1.RELEASE'
 	postgresVersion = '42.7.0'
 	testcontainersVersion = "1.19.3"
+	jjwtVersion = "0.11.2"
 }
 
 buildscript {
@@ -22,7 +23,7 @@ buildscript {
 allprojects {
 	apply plugin: 'java'
 
-	group = 'org.winwin.travel'
+	group = 'app.task-manager'
 	version = '0.0.1'
 
 	repositories {
@@ -57,6 +58,7 @@ subprojects {
 		implementation "org.postgresql:r2dbc-postgresql:${rootProject.r2dbcPostgresVersion}"
 		implementation "org.postgresql:postgresql:${rootProject.postgresVersion}"
 		implementation "io.r2dbc:r2dbc-pool:${rootProject.r2dbcPostgresVersion}"
+		implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
 
 		testImplementation 'io.projectreactor:reactor-test'
 
