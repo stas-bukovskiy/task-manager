@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {AccountService} from "../_services/account.service";
-import {Router} from "@angular/router";
+import {Router, RouterLink} from "@angular/router";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -24,11 +24,11 @@ export class LoginComponent {
     ]),
   })
   login(){
-    console.log(this.loginForm);
+    // console.log(this.loginForm);
     this.accountService.login(this.loginForm.value).subscribe({
-      // next: () => {
-      //   this.router.navigateByUrl('/members')
-      // },
+      next: () => {
+        void this.router.navigateByUrl('home')
+      },
       // error: error => this.toastr.error(error.error)
     })
   }
