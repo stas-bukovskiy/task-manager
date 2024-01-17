@@ -112,6 +112,7 @@ public class UserRequestConsumer {
                                 .message(ex.getMessage())
                                 .build());
                     } else {
+                        log.error("Error while handling query", ex);
                         return Mono.just(DefaultResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
@@ -139,6 +140,7 @@ public class UserRequestConsumer {
                                 .message(ex.getMessage())
                                 .build());
                     } else {
+                        log.error("Error while handling query", ex);
                         return Mono.just(VerifyTokenResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
@@ -166,6 +168,7 @@ public class UserRequestConsumer {
                                 .message(ex.getMessage())
                                 .build());
                     } else {
+                        log.error("Error while handling query", ex);
                         return Mono.just(LoginResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
