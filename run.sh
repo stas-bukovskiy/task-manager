@@ -14,4 +14,4 @@ echo "Building Gradle project"
 
 # Start Docker Compose
 echo "Starting Docker Compose"
-docker compose -f compose-prod.yaml up -d
+docker compose -f compose-prod.yaml up -d --build
