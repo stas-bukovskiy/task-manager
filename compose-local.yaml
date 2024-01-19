@@ -1,23 +1,6 @@
 version: "3.9"
 
 services:
-  task-manager-backend:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      args:
-        - APP_PORT=${APP_PORT}
-        - VERSION=${VERSION}
-    container_name: 'backend-dev'
-    env_file:
-      - ./.docker.env
-    ports:
-      - "${APP_OUTBOUND_PORT}:${APP_PORT}"
-    depends_on:
-      - task-manager-msg-broker
-      - task-manager-db
-      - task-manager-mongodb
-
   task-manager-msg-broker:
     image: rabbitmq:3-management-alpine
     container_name: 'message-broker-dev'
