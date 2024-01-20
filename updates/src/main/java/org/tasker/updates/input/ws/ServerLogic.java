@@ -14,13 +14,21 @@ public class ServerLogic {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final AtomicBoolean newClient;
+    private final AtomicBoolean newClient = new AtomicBoolean(true);
 
-    public ServerLogic() {
-        newClient = new AtomicBoolean(true);
-    }
 
     public Mono<Void> doLogic(WebSocketSession session, long interval) {
+        Flux.interval(Duration.ofSeconds(1))
+                .map(i -> "Message 1: " + i)
+                .map(session::textMessage)
+                .flatMap(msg -> session.send(Mono.just(msg)))
+                .subscribe();
+        Flux.interval(Duration.ofSeconds(2))
+                .map(i -> "Message 2: " + i)
+                .map(session::textMessage)
+                .flatMap(msg -> session.send(Mono.just(msg)))
+                .subscribe();
+
         return
                 session
                         .receive()

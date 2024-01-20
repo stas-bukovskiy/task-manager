@@ -57,7 +57,6 @@ public class AuthServiceImpl implements AuthService {
                         .token(verifyTokenRequest.token())
                         .build()
         ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, VerifyTokenResponse.class));
-
     }
 
 
