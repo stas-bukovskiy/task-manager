@@ -8,14 +8,15 @@ import {User, UserRegister} from "../_models/user";
 })
 export class AccountService {
   // baseUrl = 'https://api.escuelajs.co/api/v1/';
-  baseUrl = 'https://api.realworld.io/api/users/';
+  // baseUrl = 'https://api.realworld.io/api/users/';
+  baseUrl = 'https://localhost:8766/api/v1/';
   private currentUserSource = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSource.asObservable();
   constructor(private http: HttpClient) {
 
   }
-  login(model: any){
-    return this.http.post<User>(this.baseUrl + 'auth/login', model).pipe(
+  login(user: any){
+    return this.http.post<any>(this.baseUrl + 'auth/sign-in', user).pipe(
       map((response: User) => {
         const user = response;
         if(user){
@@ -26,12 +27,12 @@ export class AccountService {
   }
 
   register(user: any){
-    return this.http.post<User>(this.baseUrl + '', user).pipe(
+    return this.http.post<any>(this.baseUrl + 'auth/sign-up', user).pipe(
       map(user => {
-        if(user){
-          this.setCurrentUser(user);
-        }
-        return user;
+        console.log(user);
+        // if(user){
+        //   this.setCurrentUser(user);
+        // }
       })
     )
   }

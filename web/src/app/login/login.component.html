@@ -1,8 +1,14 @@
-<form [formGroup]="loginForm" (ngSubmit)="login()">
+<form [formGroup]="loginForm" (ngSubmit)="signIn()">
   <h1>Login</h1>
-  <input type="email" required placeholder="email" formControlName="email">
-  <input type="password" required placeholder="password" formControlName="password">
+  <input type="text" required placeholder="Email or username" formControlName="login" autocomplete="on">
+  <p class="" *ngIf="login.errors?.required && login.touched">
+    Login is required
+  </p>
+  <input type="password" required placeholder="password" formControlName="password" autocomplete="on">
+  <p class="" *ngIf="password.errors?.required && password.touched">
+    Password is required
+  </p>
   <button type="submit">Login</button>
+  <p class="error" *ngIf="loginError">{{ loginError }}</p>
   <a routerLink="/registration">Register if you don't have an account</a>
 </form>
-
