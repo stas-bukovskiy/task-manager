@@ -2,34 +2,48 @@ import { Component } from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {AccountService} from "../_services/account.service";
 import {Router, RouterLink} from "@angular/router";
+import {NgIf} from "@angular/common";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, NgIf],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
+  loginError = '';
   constructor(public accountService: AccountService, private router: Router) {
 
   }
   loginForm = new FormGroup({
-    email: new FormControl<string>('', [
+    login: new FormControl<string>('', [
       Validators.required,
-      Validators.email
     ]),
     password: new FormControl<string>('', [
       Validators.required
     ]),
   })
-  login(){
-    // console.log(this.loginForm);
+  signIn(){
+    if(this.loginForm.status === "INVALID") {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
     this.accountService.login(this.loginForm.value).subscribe({
       next: () => {
-        void this.router.navigateByUrl('home')
+        this.router.navigateByUrl('home');
       },
-      // error: error => this.toastr.error(error.error)
+      error: (err) => {
+        console.error(err);
+        this.loginError = 'Invalid login or password';
+      }
     })
   }
+  get login() {
+    return this.loginForm.controls.login as FormControl;
+  }
+  get password() {
+    return this.loginForm.controls.password as FormControl;
+  }
+
 }

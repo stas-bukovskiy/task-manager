@@ -1,10 +1,53 @@
 <form [formGroup]="registrationForm" (ngSubmit)="register()">
   <h1>Registration</h1>
 
+  <input type="text" placeholder="Username" formControlName="username" autocomplete="on">
+  <p class="" *ngIf="username.errors?.required && username.touched">
+    Username is required
+  </p>
+  <p class="" *ngIf="username.errors?.minlength && username.touched">
+    Username must be at least 2 symbols
+  </p>
+  <p class="" *ngIf="username.errors?.pattern && username.touched">
+    Username can contain only A-z
+  </p>
 
-  <input type="text" required placeholder="username" formControlName="username">
-  <input type="email" required placeholder="email" formControlName="email">
-  <input type="password" required placeholder="password" formControlName="password">
-  <button type="submit">Login</button>
+
+  <input type="email" placeholder="Email" formControlName="email" autocomplete="on">
+  <p class="" *ngIf="email.errors?.required && email.touched">
+    Email is required
+  </p>
+  <p class="" *ngIf="email.errors?.email && email.touched">
+    Write a valid email
+  </p>
+
+  <input type="password" placeholder="Password" formControlName="password" autocomplete="on">
+  <p class="" *ngIf="password.errors?.required && password.touched">
+    Password is required
+  </p>
+  <p class="" *ngIf="password.errors?.minlength && password.touched">
+    Password must be at least 6 symbols
+  </p>
+
+  <input type="text" placeholder="First name" formControlName="first_name" autocomplete="on">
+  <p class="" *ngIf="firstName.errors?.required && firstName.touched">
+    First name is required
+  </p>
+  <p class="" *ngIf="firstName.errors?.minlength && firstName.touched">
+    First name must be at least 2 symbols
+  </p>
+
+  <input type="text" placeholder="Last name" formControlName="last_name" autocomplete="on">
+  <p class="" *ngIf="lastName.errors?.required && lastName.touched">
+    Last name is required
+  </p>
+  <p class="" *ngIf="lastName.errors?.minlength && lastName.touched">
+    Last name must be at least 2 symbols
+  </p>
+
+  <button type="submit">Register</button>
+  <p class="" *ngIf="registrationError">
+    {{registrationError}}
+  </p>
   <a routerLink="/login">Login if you have an account</a>
 </form>
