@@ -52,19 +52,6 @@ export class RegisterComponent {
       this.registrationForm.markAllAsTouched();
       return;
     }
-      // this.http.post<any>('https://localhost:8766/api/v1/auth/sign-up', this.registrationForm.value).subscribe({
-      //     next: (response) => {
-      //         // Handle successful response
-      //         console.log('Registration successful', response);
-      //         // Navigate to another route if necessary
-      //         this.router.navigate(['/login']);
-      //     },
-      //     error: (error) => {
-      //         // Handle error response
-      //         console.error('Registration failed', error);
-      //         this.registrationError = 'Username or email is already taken';
-      //     }
-      // });
     this.accountService.register(this.registrationForm.value).subscribe({
       next: () => {
         this.router.navigateByUrl('/login');

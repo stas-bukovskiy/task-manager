@@ -5,18 +5,21 @@ import {map} from "rxjs";
 
 export const authGuard: CanActivateFn = (route, state) => {
   const accountService = inject(AccountService);
-  // const toastr = inject(ToastrService);
   const router = inject(Router);
   return accountService.currentUser$.pipe(
     map(user => {
-      // console.log(user);
       if (user) {
+        if(state.url === '/login' || state.url === '/registration'){
+          router.navigateByUrl('/');
+          return false;
+        }
         return true;
       }
       else {
-        // toastr.error('you shall not pass!');
+        if(state.url === '/login' || state.url === '/registration'){
+          return true;
+        }
         router.navigate(['/login']);
-        // this.router.navigate(['/login'], { queryParams: { returnUrl: state.url }});
         return false;
       }
     })

@@ -7,10 +7,8 @@ import {User, UserRegister} from "../_models/user";
   providedIn: 'root'
 })
 export class AccountService {
-  // baseUrl = 'https://api.escuelajs.co/api/v1/';
-  // baseUrl = 'https://api.realworld.io/api/users/';
-  baseUrl = 'https://localhost:8766/api/v1/';
-  private currentUserSource = new BehaviorSubject<User | null>(null);
+  baseUrl = 'http://localhost:8766/api/v1/';
+  private currentUserSource = new BehaviorSubject<string | null>(null);
   currentUser$ = this.currentUserSource.asObservable();
   constructor(private http: HttpClient) {
 
@@ -20,29 +18,30 @@ export class AccountService {
       map((response: User) => {
         const user = response;
         if(user){
-          this.setCurrentUser(user);
+          this.setCurrentToken(user.token);
+          localStorage.setItem('token', user.token);
         }
       })
     );
   }
 
   register(user: any){
-    return this.http.post<any>(this.baseUrl + 'auth/sign-up', user).pipe(
-      map(user => {
-        console.log(user);
+    return this.http.post<any>(this.baseUrl + 'auth/sign-up', user)
+      // .pipe(
+      // map(user => {
+        // console.log(user);
         // if(user){
         //   this.setCurrentUser(user);
         // }
-      })
-    )
+      // })
+    // )
   }
 
-  setCurrentUser(user: User){
-    localStorage.setItem('user', JSON.stringify(user));
-    this.currentUserSource.next(user);
+  setCurrentToken(token: string){
+    this.currentUserSource.next(token);
   }
   logout() {
-    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     this.currentUserSource.next(null);
   }
 }

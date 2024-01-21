@@ -15,6 +15,10 @@ export class HomeComponent {
   }
   logout(){
     this.accountService.logout();
-    // this.router.navigateByUrl('/login');
+    this.router.navigateByUrl('/login');
+  }
+  test(){
+    const user = localStorage.getItem('token') ?? '';
+    console.log(user);
   }
 }
