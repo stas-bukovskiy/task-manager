@@ -31,6 +31,14 @@ public final class SerializerUtils {
         }
     }
 
+    public static String serializeToJsonString(final Object object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
     public static <T> T deserializeFromJsonBytes(final byte[] jsonBytes, final Class<T> valueType) {
         try {
             return objectMapper.readValue(jsonBytes, valueType);

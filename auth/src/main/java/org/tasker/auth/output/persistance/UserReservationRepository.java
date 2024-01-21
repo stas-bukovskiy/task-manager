@@ -2,7 +2,7 @@ package org.tasker.auth.output.persistance;
 
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-import org.tasker.auth.models.reservation.UsernameEmailReservation;
+import org.tasker.auth.models.domain.UsernameEmailReservation;
 import reactor.core.publisher.Mono;
 
 @Repository

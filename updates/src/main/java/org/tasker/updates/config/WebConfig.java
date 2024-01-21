@@ -17,7 +17,7 @@ import org.springframework.web.reactive.socket.server.support.HandshakeWebSocket
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
 import org.tasker.updates.input.http.AuthHandler;
 import org.tasker.updates.input.ws.AuthRequestUpgradeStrategy;
-import org.tasker.updates.input.ws.UpdatesHandler;
+import org.tasker.updates.input.ws.WSHandler;
 import org.tasker.updates.service.AuthService;
 
 import java.util.Arrays;
@@ -46,9 +46,9 @@ public class WebConfig implements WebFluxConfigurer {
     }
 
     @Bean
-    public HandlerMapping handlerMapping(UpdatesHandler updatesHandler, AuthService authService) {
+    public HandlerMapping handlerMapping(WSHandler WSHandler, AuthService authService) {
         Map<String, WebSocketHandler> handlerByPathMap = new HashMap<>();
-        handlerByPathMap.put("/api/v1/updates", updatesHandler);
+        handlerByPathMap.put("/api/v1/updates", WSHandler);
 
         SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
         handlerMapping.setUrlMap(handlerByPathMap);

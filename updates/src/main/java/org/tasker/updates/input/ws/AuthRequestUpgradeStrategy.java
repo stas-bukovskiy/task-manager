@@ -17,7 +17,7 @@ import org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSess
 import org.springframework.web.reactive.socket.server.RequestUpgradeStrategy;
 import org.springframework.web.server.ServerWebExchange;
 import org.tasker.updates.exceptions.NotAuthenticatedException;
-import org.tasker.updates.models.dto.VerifyTokenRequest;
+import org.tasker.updates.models.request.VerifyTokenRequest;
 import org.tasker.updates.service.AuthService;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerResponse;
@@ -72,15 +72,15 @@ public class AuthRequestUpgradeStrategy implements RequestUpgradeStrategy {
                         .token(token)
                         .build()))
                 .flatMap(authRes -> {
-                    if (authRes.httpCode() != HttpStatus.OK.value()) {
-                        response.setRawStatusCode(authRes.httpCode());
+                    if (authRes.getHttpCode() != HttpStatus.OK.value()) {
+                        response.setRawStatusCode(authRes.getHttpCode());
                         return response.setComplete();
                     }
 
                     return reactorResponse.sendWebsocket((in, out) -> {
                         ReactorNettyWebSocketSession session = new ReactorNettyWebSocketSession(in, out, handshakeInfo, bufferFactory, this.maxFramePayloadLength);
                         return handler.handle(session)
-                                .contextWrite(ctx -> ctx.put("aggregate_id", authRes.aggregateID()));
+                                .contextWrite(ctx -> ctx.put("aggregate_id", authRes.getData()));
                     });
                 })
                 .onErrorResume((ex) -> {

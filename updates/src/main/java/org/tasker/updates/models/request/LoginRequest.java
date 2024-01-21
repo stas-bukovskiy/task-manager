@@ -1,4 +1,4 @@
-package org.tasker.updates.models.dto;
+package org.tasker.updates.models.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
