@@ -11,7 +11,7 @@ prod-down:
 	docker compose -f compose-prod.yaml down
 
 local-up:
-	docker compose -f compose-local.yaml up -d
+	docker compose -f compose-local.yaml up -d  --remove-orphans
 
 local-down:
 	docker compose -f compose-local.yaml down

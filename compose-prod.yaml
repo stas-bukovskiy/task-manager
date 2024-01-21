@@ -14,9 +14,12 @@ services:
     ports:
       - "${APP_OUTBOUND_PORT}:${APP_PORT}"
     depends_on:
-      - task-manager-msg-broker
-      - task-manager-db
-      - task-manager-mongodb
+      task-manager-msg-broker:
+        condition: service_healthy
+      task-manager-db:
+        condition: service_healthy
+      task-manager-mongodb:
+        condition: service_healthy
 
   task-manager-msg-broker:
     image: rabbitmq:3-management-alpine
@@ -29,6 +32,12 @@ services:
     volumes:
       - task-manager-msg-broker:/var/lib/rabbitmq/
       - task-manager-msg-broker:/var/log/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      start_period: 10s
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   task-manager-db:
     image: postgres:15
@@ -40,6 +49,13 @@ services:
     volumes:
       - task-manager-db:/var/lib/postgresql/data/
       - task-manager-db:/var/log/postgresql/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      start_period: 10s
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
 
   task-manager-mongodb:
     image: mongo:7.0
@@ -50,6 +66,13 @@ services:
       - "${MONGO_PORT}:27017"
     volumes:
       - task-manager-mongodb:/data/db
+    healthcheck:
+      test: [ "CMD","mongosh", "--eval", "db.adminCommand('ping')" ]
+      start_period: 10s
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
 
 volumes:
   task-manager-mongodb:
