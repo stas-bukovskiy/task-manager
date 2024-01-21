@@ -1,4 +1,4 @@
-package org.tasker.updates.models.dto;
+package org.tasker.updates.models.request;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;

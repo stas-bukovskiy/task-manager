@@ -1,4 +1,4 @@
-package org.tasker.auth.models.reservation;
+package org.tasker.auth.models.domain;
 
 import lombok.Builder;
 import lombok.Data;

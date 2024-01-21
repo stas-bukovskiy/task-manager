@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tasker.auth.exceptions.AlreadyExistsException;
 import org.tasker.auth.models.domain.UserAggregate;
-import org.tasker.auth.models.reservation.UsernameEmailReservation;
+import org.tasker.auth.models.domain.UsernameEmailReservation;
 import org.tasker.auth.output.persistance.UserReservationRepository;
 import org.tasker.auth.service.AuthCommandService;
 import org.tasker.common.es.EventStoreDB;

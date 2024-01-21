@@ -5,19 +5,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.tasker.auth.exceptions.AlreadyExistsException;
 import org.tasker.auth.exceptions.InvalidCredentialsException;
+import org.tasker.auth.mappers.UserMapper;
 import org.tasker.auth.service.AuthCommandService;
 import org.tasker.auth.service.AuthQueryService;
-import org.tasker.common.dto.DefaultResponse;
-import org.tasker.common.dto.LoginResponse;
-import org.tasker.common.dto.VerifyTokenResponse;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.commands.RegisterNewUserCommand;
 import org.tasker.common.models.commands.UpdateUserCommand;
+import org.tasker.common.models.queries.GetUserQuery;
 import org.tasker.common.models.queries.LoginUserQuery;
 import org.tasker.common.models.queries.VerifyTokenQuery;
+import org.tasker.common.models.response.DefaultResponse;
+import org.tasker.common.models.response.UsersResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.OutboundMessage;
@@ -43,7 +45,8 @@ public class UserRequestConsumer {
         var exchange = authMessagingSpecs.requestQueueSpec();
         sender.declareExchange(queue)
                 .then(sender.declareQueue(exchange))
-                .thenMany(Flux.just(RegisterNewUserCommand.COMMAND_NAME, UpdateUserCommand.COMMAND_NAME, VerifyTokenQuery.QUERY_NAME, LoginUserQuery.QUERY_NAME)
+                .thenMany(Flux.just(RegisterNewUserCommand.COMMAND_NAME, UpdateUserCommand.COMMAND_NAME,
+                                VerifyTokenQuery.QUERY_NAME, LoginUserQuery.QUERY_NAME, GetUserQuery.QUERY_NAME)
                         .map(authMessagingSpecs::requestBindingSpecs)
                         .flatMap(sender::bind))
                 .doOnError(ex -> log.error("Error while initializing command queue: {}", ex.getMessage()))
@@ -68,6 +71,8 @@ public class UserRequestConsumer {
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), VerifyTokenQuery.class), delivery.getProperties().getReplyTo());
                         case LoginUserQuery.QUERY_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), LoginUserQuery.class), delivery.getProperties().getReplyTo());
+                        case GetUserQuery.QUERY_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetUserQuery.class), delivery.getProperties().getReplyTo());
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
@@ -129,19 +134,19 @@ public class UserRequestConsumer {
 
     private void handle(VerifyTokenQuery query, String routingKey) {
         authQueryService.handle(query)
-                .map(aggregateID -> VerifyTokenResponse.builder()
+                .map(aggregateID -> DefaultResponse.builder()
                         .httpCode(200)
-                        .aggregateID(aggregateID)
+                        .data(aggregateID)
                         .build())
                 .onErrorResume(ex -> {
                     if (ex instanceof InvalidCredentialsException) {
-                        return Mono.just(VerifyTokenResponse.builder()
+                        return Mono.just(DefaultResponse.builder()
                                 .httpCode(401)
                                 .message(ex.getMessage())
                                 .build());
                     } else {
                         log.error("Error while handling query", ex);
-                        return Mono.just(VerifyTokenResponse.builder()
+                        return Mono.just(DefaultResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
                                 .build());
@@ -157,24 +162,48 @@ public class UserRequestConsumer {
 
     private void handle(LoginUserQuery query, String routingKey) {
         authQueryService.handle(query)
-                .map(token -> LoginResponse.builder()
-                        .token(token)
+                .map(token -> DefaultResponse.builder()
+                        .data(token)
                         .httpCode(200)
                         .build())
                 .onErrorResume(ex -> {
                     if (ex instanceof InvalidCredentialsException) {
-                        return Mono.just(LoginResponse.builder()
+                        return Mono.just(DefaultResponse.builder()
                                 .httpCode(401)
                                 .message(ex.getMessage())
                                 .build());
                     } else {
                         log.error("Error while handling query", ex);
-                        return Mono.just(LoginResponse.builder()
+                        return Mono.just(DefaultResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
                                 .build());
                     }
                 })
+                .subscribe(response -> {
+                    log.info("Sending response on {}: {}", routingKey, response);
+
+                    OutboundMessage message = new OutboundMessage(authMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
+                    sender.send(Mono.just(message)).subscribe();
+                });
+    }
+
+    private void handle(GetUserQuery query, String routingKey) {
+        authQueryService.handle(query)
+                .map(users -> UsersResponse.builder()
+                        .httpCode(HttpStatus.OK.value())
+                        .data(users.stream()
+                                .map(UserMapper::fromDocToDto)
+                                .toList())
+                        .build())
+                .onErrorResume(ex -> {
+                            log.error("Error while handling query", ex);
+                            return Mono.just(UsersResponse.builder()
+                                    .httpCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .message("Internal server error")
+                                    .build());
+                        }
+                )
                 .subscribe(response -> {
                     log.info("Sending response on {}: {}", routingKey, response);
 
