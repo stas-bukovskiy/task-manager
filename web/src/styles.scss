@@ -1,8 +1,9 @@
 @import "./styles/reset";
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap&family=Righteous&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap&family=Righteous&display=swap&family=Inter&display=swap');
 $font-main: 'Red Hat Display', serif;
 $font-secondary: Montserrat;
 $font-title: 'Righteous';
+$font-accent: 'Inter';
 
 $color-white: #FFF;
 $color-white-2: #FFFAF6;
@@ -12,6 +13,7 @@ $color-brown: #7C5023;
 $color-black: #000;
 $color-red: #BF0603;
 $color-background: #F5EAE6;
+$color-green: #00C046;
 
 body{
   background: #FFFAF6;

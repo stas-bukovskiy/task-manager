@@ -3,11 +3,15 @@
   <h1>tasker</h1>
 </a>
 
-<button class="menu__element menu__element--user">
+<button class="menu__element menu__element--user" (click)="modalService.open()">
   <img src="assets/images/profile.svg" alt="profile">
   <span>john.smith</span>
 </button>
-
+@if(modalService.isVisible$ | async){
+  <app-modal>
+    <app-user-info></app-user-info>
+  </app-modal>
+}
 <a class="menu__element menu__element--home" routerLink="/">
   <img src="assets/images/home.svg" alt="home">
   <span>Home</span>

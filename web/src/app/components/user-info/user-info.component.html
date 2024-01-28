@@ -1,0 +1,56 @@
+<div class="user-info-panel">
+  <form [formGroup]="userInfoForm" (ngSubmit)="changeInfo()" class="register-form">
+    <div class="form">
+      <h3 class="user-info-panel-header">User Information</h3>
+
+      <div class="form__inputs">
+        <div>
+          <p class="form__input-label">Email</p>
+          <input class="form__input form__input--disabled" type="text" disabled placeholder="Email">
+          <!--        <p class="form__error" *ngIf="login.errors?.required && login.touched">-->
+          <!--          Login is required-->
+          <!--        </p>-->
+        </div>
+
+        <div>
+          <p class="form__input-label">Username</p>
+          <input class="form__input" type="text" placeholder="Username" formControlName="username" autocomplete="on">
+          <p class="form__error" *ngIf="username.errors?.required && username.touched">
+            Username is required
+          </p>
+          <p class="form__error" *ngIf="username.errors?.minlength && username.touched">
+            Username must be at least 2 symbols
+          </p>
+          <p class="form__error" *ngIf="username.errors?.pattern && username.touched">
+            Username can contain only A-z
+          </p>
+        </div>
+
+        <div>
+          <p class="form__input-label">First name</p>
+          <input class="form__input" type="text" placeholder="First name" formControlName="first_name"
+                 autocomplete="on">
+          <p class="form__error" *ngIf="firstName.errors?.required && firstName.touched">
+            First name is required
+          </p>
+          <p class="form__error" *ngIf="firstName.errors?.minlength && firstName.touched">
+            First name must be at least 2 symbols
+          </p>
+        </div>
+
+        <div>
+          <p class="form__input-label">Last name</p>
+          <input class="form__input" type="text" placeholder="Last name" formControlName="last_name" autocomplete="on">
+          <p class="form__error" *ngIf="lastName.errors?.required && lastName.touched">
+            Last name is required
+          </p>
+        </div>
+
+        <div class="form__button-section">
+          <button class="form__button form__button--submit" type="submit">Save</button>
+          <button class="form__button form__button--cancel" (click)="modalService.close()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
