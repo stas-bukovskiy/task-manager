@@ -1,0 +1,98 @@
+<main class="register-panel">
+
+  <form class="register-form" [formGroup]="registrationForm" (ngSubmit)="register()">
+    <div class="form">
+
+      <div>
+        <p class="form__input-label">First name</p>
+        <input class="form__input" type="text" placeholder="First name" formControlName="first_name" autocomplete="on">
+        <p class="form__error" *ngIf="firstName.errors?.required && firstName.touched">
+          First name is required
+        </p>
+        <p class="form__error" *ngIf="firstName.errors?.minlength && firstName.touched">
+          First name must be at least 2 symbols
+        </p>
+      </div>
+
+      <div>
+        <p class="form__input-label">Last name</p>
+        <input class="form__input" type="text" placeholder="Last name" formControlName="last_name" autocomplete="on">
+        <p class="form__error" *ngIf="lastName.errors?.required && lastName.touched">
+          Last name is required
+        </p>
+      </div>
+
+      <div>
+        <p class="form__input-label">Username</p>
+        <input class="form__input" type="text" placeholder="Username" formControlName="username" autocomplete="on">
+        <p class="form__error" *ngIf="username.errors?.required && username.touched">
+          Username is required
+        </p>
+        <p class="form__error" *ngIf="username.errors?.minlength && username.touched">
+          Username must be at least 2 symbols
+        </p>
+        <p class="form__error" *ngIf="username.errors?.pattern && username.touched">
+          Username can contain only A-z
+        </p>
+      </div>
+
+      <div>
+        <p class="form__input-label">Email</p>
+        <input class="form__input" type="email" placeholder="Email" formControlName="email" autocomplete="on">
+        <p class="form__error" *ngIf="email.errors?.required && email.touched">
+          Email is required
+        </p>
+        <p class="form__error" *ngIf="email.errors?.email && email.touched">
+          Write a valid email
+        </p>
+      </div>
+
+
+      <div>
+        <p class="form__input-label">Password</p>
+        <input class="form__input" type="password" placeholder="Password" formControlName="password" autocomplete="on">
+        <p class="form__error" *ngIf="password.errors?.required && password.touched">
+          Password is required
+        </p>
+        <p class="form__error" *ngIf="password.errors?.minlength && password.touched">
+          Password must be at least 6 symbols
+        </p>
+        <p class="form__error" *ngIf="confirmPasswordError && confirmPassword.touched && password.touched && !password.errors?.required && !password.errors?.minlength">
+          Passwords must match
+        </p>
+      </div>
+
+      <div>
+        <p class="form__input-label">Confirm Password</p>
+        <input class="form__input" type="password" placeholder="Password" formControlName="confirmPassword" autocomplete="on">
+        <p class="form__error" *ngIf="confirmPassword.errors?.required && confirmPassword.touched">
+          You must confirm your password
+        </p>
+        <p class="form__error" *ngIf="confirmPasswordError && confirmPassword.touched && password.touched && !confirmPassword.errors?.required">
+          Passwords must match
+        </p>
+      </div>
+
+      <div>
+        <button class="form__button-submit" type="submit">Sign Up</button>
+        <p class="form__under-button-text">or</p>
+        <div class="form__signup-group">
+          <div class="signup-group__line"></div>
+          <a class="form__signup" routerLink="/login">Log In</a>
+          <div class="signup-group__line"></div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+
+  <div class="register__aside">
+    <div class="aside__top-row">
+      <img src="assets/images/logo-white.svg" alt="logo">
+      <h1>tasker</h1>
+    </div>
+    <h2 class="aside__heading">Are you new?</h2>
+    <p class="aside__sub-heading">Register your first account</p>
+  </div>
+</main>
+<div class="popup-error" *ngIf="registrationError"><p>{{ registrationError }}</p></div>

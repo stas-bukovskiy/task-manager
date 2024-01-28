@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+@import "./styles/reset";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Red+Hat+Display:wght@400;500;600;700;800&display=swap&family=Righteous&display=swap');
+$font-main: 'Red Hat Display', serif;
+$font-secondary: Montserrat;
+$font-title: 'Righteous';
+
+$color-white: #FFF;
+$color-white-2: #FFFAF6;
+$color-dark: #3F3F3F;
+$color-dark-2: #626262;
+$color-brown: #7C5023;
+$color-black: #000;
+$color-red: #BF0603;
+$color-background: #F5EAE6;
+
+body{
+  background: #FFFAF6;
+}

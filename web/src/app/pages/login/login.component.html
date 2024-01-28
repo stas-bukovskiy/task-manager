@@ -1,0 +1,44 @@
+<main class="login-panel">
+  <div class="login__aside">
+    <div class="aside__top-row">
+      <img src="assets/images/logo-white.svg" alt="logo">
+      <h1>tasker</h1>
+    </div>
+    <h2 class="aside__heading">Welcome back!</h2>
+    <p class="aside__sub-heading">Please login to your account</p>
+  </div>
+
+  <form [formGroup]="loginForm" (ngSubmit)="signIn()" class="register-form">
+    <div class="form">
+      <div>
+        <p class="form__input-label">Email or username</p>
+        <input class="form__input" type="text" required placeholder="jonh@example.com" formControlName="login"
+               autocomplete="on">
+        <p class="form__error" *ngIf="login.errors?.required && login.touched">
+          Login is required
+        </p>
+      </div>
+
+      <div class="form__second-row">
+        <p class="form__input-label">Password</p>
+        <input class="form__input" type="password" required placeholder="password" formControlName="password"
+               autocomplete="on">
+        <p class="form__error" *ngIf="password.errors?.required && password.touched">
+          Password is required
+        </p>
+      </div>
+
+      <div>
+        <button class="form__button-submit" type="submit">Log In</button>
+        <p class="form__under-button-text">or</p>
+        <div class="form__signup-group">
+          <div class="signup-group__line"></div>
+          <a class="form__signup" routerLink="/registration">Sign Up</a>
+          <div class="signup-group__line"></div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</main>
+<div class="popup-error" *ngIf="loginError"><p>{{ loginError }}</p></div>

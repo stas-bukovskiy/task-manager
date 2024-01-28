@@ -1,0 +1,40 @@
+@import "styles";
+
+.menu__logo{
+
+}
+.menu__element{
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-family: $font-main;
+  font-size: 24px;
+  font-weight: 700;
+  color: $color-dark;
+
+  &--logo{
+    color: $color-brown;
+    font-size: 36px;
+    font-weight: 400;
+    font-family: $font-title;
+  }
+  &--user{
+    margin-top: 8px;
+    font-size: 21px;
+    font-weight: 400;
+  }
+  &--home{
+    margin-top: 33px;
+    background: $color-brown;
+    border-radius: 9px;
+    color: $color-white;
+    padding: 7px;
+    width: 125px;
+  }
+}
+.menu__group{
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  margin-top: 24px;
+}

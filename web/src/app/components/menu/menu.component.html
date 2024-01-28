@@ -1,0 +1,32 @@
+<a class="menu__element menu__element--logo" routerLink="/">
+  <img src="assets/images/logo-brown.svg" alt="logo">
+  <h1>tasker</h1>
+</a>
+
+<button class="menu__element menu__element--user">
+  <img src="assets/images/profile.svg" alt="profile">
+  <span>john.smith</span>
+</button>
+
+<a class="menu__element menu__element--home" routerLink="/">
+  <img src="assets/images/home.svg" alt="home">
+  <span>Home</span>
+</a>
+
+<div class="menu__group">
+  <button class="menu__element">
+    <img src="assets/images/boards.svg" alt="boards">
+    <span>Boards</span>
+    <img src="assets/images/arrow-down.svg" alt="arrow">
+  </button>
+
+  <button class="menu__element">
+    <img src="assets/images/bell.svg" alt="bell">
+    <span>Notifications</span>
+  </button>
+
+  <button (click)="logout()" class="menu__element">
+    <img src="assets/images/logout.svg" alt="log out">
+    <span>Log out</span>
+  </button>
+</div>

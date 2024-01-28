@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import {LoginComponent} from "./login/login.component";
+import {LoginComponent} from "./pages/login/login.component";
 import {AccountService} from "./_services/account.service";
 import {User} from "./_models/user";
 

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
-import {AccountService} from "../_services/account.service";
+import {AccountService} from "../../_services/account.service";
 import {Router, RouterLink} from "@angular/router";
 import {NgIf} from "@angular/common";
 
@@ -34,8 +34,8 @@ export class LoginComponent {
         this.router.navigateByUrl('home');
       },
       error: (err) => {
-        console.error(err);
-        this.loginError = 'Invalid login or password';
+        // console.error(err);
+        this.loginError = 'Login or password are incorrect';
       }
     })
   }

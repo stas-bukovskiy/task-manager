@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
-import {AccountService} from "../_services/account.service";
+import {AccountService} from "../../_services/account.service";
 import {Router, RouterLink} from "@angular/router";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {NgIf} from "@angular/common";
-import {FocusDirective} from "../_directives/focus.directive";
+import {FocusDirective} from "../../_directives/focus.directive";
 import {HttpClient} from "@angular/common/http";
+import {passwordMatchValidator} from "../../_validators/passwordMatchValidator";
 
 @Component({
   selector: 'app-register',
@@ -36,6 +37,9 @@ export class RegisterComponent {
       Validators.required,
       Validators.minLength(6)
     ]),
+    confirmPassword: new FormControl<string>('', [
+      Validators.required
+    ]),
     first_name: new FormControl<string>('', [
       Validators.required,
       Validators.minLength(2)
@@ -44,15 +48,17 @@ export class RegisterComponent {
       Validators.required,
       Validators.minLength(2)
     ]),
-  })
+  },{validators: passwordMatchValidator()})
   register(){
-      console.log(this.registrationForm);
-
+    console.log(this.registrationForm);
     if(this.registrationForm.status === "INVALID") {
       this.registrationForm.markAllAsTouched();
       return;
     }
-    this.accountService.register(this.registrationForm.value).subscribe({
+
+    const { confirmPassword, ...formData } = this.registrationForm.value;
+    console.log(formData);
+    this.accountService.register(formData).subscribe({
       next: () => {
         this.router.navigateByUrl('/login');
       },
@@ -62,6 +68,7 @@ export class RegisterComponent {
       }
     })
   }
+
   get username() {
     return this.registrationForm.controls.username as FormControl;
   }
@@ -77,4 +84,11 @@ export class RegisterComponent {
   get lastName() {
     return this.registrationForm.controls.last_name as FormControl;
   }
+  get confirmPassword() {
+    return this.registrationForm.controls.confirmPassword as FormControl;
+  }
+  get confirmPasswordError() {
+    return this.registrationForm.errors?.notSame as FormControl;
+  }
 }
+

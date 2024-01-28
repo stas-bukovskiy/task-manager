@@ -1,15 +1,17 @@
 import { Component } from '@angular/core';
-import {AccountService} from "../_services/account.service";
-import {Router} from "@angular/router";
+import {AccountService} from "../../_services/account.service";
+import {Router, RouterLink} from "@angular/router";
 
 @Component({
-  selector: 'app-home',
+  selector: 'app-menu',
   standalone: true,
-  imports: [],
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+  imports: [
+    RouterLink
+  ],
+  templateUrl: './menu.component.html',
+  styleUrl: './menu.component.scss'
 })
-export class HomeComponent {
+export class MenuComponent {
   constructor(public accountService: AccountService, private router: Router) {
 
   }
