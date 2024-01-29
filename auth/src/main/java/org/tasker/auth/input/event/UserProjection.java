@@ -60,7 +60,7 @@ public class UserProjection implements Projection {
                                 .then()),
                 UserInfoUpdatedEvent.USER_INFO_UPDATED_V1, (event ->
                         userRepository.findByAggregateId(event.getAggregateId())
-                                .handle((userDoc, sink) -> {
+                                .<UserDocument>handle((userDoc, sink) -> {
                                     if (userDoc.getProcessedEvents().contains(event.getId().toString())) {
                                         sink.complete();
                                         return;
@@ -75,9 +75,8 @@ public class UserProjection implements Projection {
                                     processedEvents.add(event.getId().toString());
                                     userDoc.setProcessedEvents(processedEvents);
 
-                                    sink.next(baseEvent);
+                                    sink.next(userDoc);
                                 })
-                                .cast(UserDocument.class)
                                 .flatMap(userRepository::save)
                                 .then()
                 )

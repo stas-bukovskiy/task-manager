@@ -4,10 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.models.commands.UpdateUserCommand;
 import org.tasker.common.models.dto.UserDto;
 import org.tasker.common.models.queries.GetUserQuery;
+import org.tasker.common.models.response.DefaultResponse;
 import org.tasker.common.models.response.UsersResponse;
 import org.tasker.updates.exceptions.ItemNotFountException;
+import org.tasker.updates.models.request.UpdateUserInfoRequest;
 import org.tasker.updates.output.event.AuthPublisher;
 import org.tasker.updates.service.UserService;
 import reactor.core.publisher.Mono;
@@ -35,5 +38,19 @@ public class UserServiceImpl implements UserService {
                         sink.next(response.getData().get(0));
                     }
                 });
+    }
+
+    @Override
+    public Mono<DefaultResponse> updateUserInfo(String userId, UpdateUserInfoRequest data) {
+        return publisher.publishAndReceive(
+                        UpdateUserCommand.COMMAND_NAME,
+                        UpdateUserCommand.builder()
+                                .aggregateID(userId)
+                                .username(data.username())
+                                .firstName(data.firstName())
+                                .lastName(data.lastName())
+                                .build()
+                )
+                .map(responseBytes -> SerializerUtils.deserializeFromJsonBytes(responseBytes, DefaultResponse.class));
     }
 }

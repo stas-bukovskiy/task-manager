@@ -6,10 +6,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.tasker.auth.exceptions.InvalidCredentialsException;
+import org.tasker.auth.mappers.UserMapper;
 import org.tasker.auth.models.domain.UserDocument;
 import org.tasker.auth.output.persistance.UserRepository;
 import org.tasker.auth.service.AuthQueryService;
 import org.tasker.auth.service.JWTService;
+import org.tasker.common.models.dto.LoginData;
 import org.tasker.common.models.queries.GetUserQuery;
 import org.tasker.common.models.queries.LoginUserQuery;
 import org.tasker.common.models.queries.VerifyTokenQuery;
@@ -27,13 +29,16 @@ public class AuthQueryServiceImpl implements AuthQueryService {
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
 
-    public Mono<String> handle(LoginUserQuery query) {
+    public Mono<LoginData> handle(LoginUserQuery query) {
         return userRepository.findByEmailOrUsername(query.login(), query.login())
                 .switchIfEmpty(Mono.error(new InvalidCredentialsException("User not found or invalid credentials")))
                 .handle((userDoc, sink) -> {
                     if (passwordEncoder.matches(query.password(), userDoc.getPassword())) {
                         final var token = jwtService.generateToken(userDoc.getAggregateId());
-                        sink.next(token);
+                        sink.next(LoginData.builder()
+                                .user(UserMapper.fromDocToDto(userDoc))
+                                .token(token)
+                                .build());
                     } else {
                         sink.error(new InvalidCredentialsException("User not found or invalid credentials"));
                     }

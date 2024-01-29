@@ -3,16 +3,21 @@ package org.tasker.updates.input.ws;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.updates.models.request.UpdateUserInfoRequest;
 import org.tasker.updates.models.request.WSRequest;
 import org.tasker.updates.models.response.ErrorMessages;
 import org.tasker.updates.models.response.ErrorResponse;
 import org.tasker.updates.models.response.WSResponse;
 import org.tasker.updates.service.UserService;
+import org.tasker.updates.service.ValidationService;
+import org.tasker.updates.service.WSRequestDeserializeService;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -21,22 +26,38 @@ import reactor.core.publisher.Mono;
 public class WSHandler implements WebSocketHandler {
 
     private final UserService userService;
+    private final ValidationService validator;
+    private final WSRequestDeserializeService wsRequestDeserializeService;
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
         return session.receive()
-                .map(requestRaw -> {
+                .<WSRequest>handle((requestRaw, sink) -> {
                     var payload = requestRaw.getPayload();
                     var payloadBytes = new byte[payload.readableByteCount()];
                     payload.read(payloadBytes);
 
-                    return SerializerUtils.deserializeFromJsonBytes(payloadBytes, WSRequest.class);
+                    try {
+                        sink.next(wsRequestDeserializeService.deserialize(payloadBytes));
+                    } catch (Exception ex) {
+                        sink.error(ex);
+                    }
                 })
                 .flatMap(wsRequest -> delegateRequest(session, wsRequest)
                         .onErrorResume(ex -> {
-                            log.error("Error while handling WS request: {}", wsRequest, ex);
-                            return sendErrorResponse(session, wsRequest, ex);
+                            log.info("Error while handling WS request: {}", wsRequest, ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
                         }))
+                .onErrorResume(ex -> {
+                    if (ex instanceof ResponseStatusException responseStatusException) {
+                        if (responseStatusException.getStatusCode().is4xxClientError()) {
+                            log.info("Error while handling WS request: {}", responseStatusException.getReason());
+                        } else {
+                            log.error("Error while handling WS request", ex);
+                        }
+                    }
+                    return Mono.empty();
+                })
                 .then();
     }
 
@@ -48,6 +69,28 @@ public class WSHandler implements WebSocketHandler {
                             return userService.getUserByAggregateId(currentUserId);
                         })
                         .flatMap(userBytes -> sendResponse(session, wsRequest, userBytes));
+            }
+            case "update_user_info" -> {
+                return Mono.deferContextual(ctx -> {
+                            if (wsRequest.data() == null) {
+                                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                            }
+                            final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), UpdateUserInfoRequest.class);
+                            validator.validate(request, "update_user_info_request");
+
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return userService.updateUserInfo(currentUserId, request);
+                        })
+                        .flatMap((response) -> {
+                            if (response.getHttpCode() != HttpStatus.OK.value()) {
+                                return Mono.error(new ResponseStatusException(HttpStatusCode.valueOf(response.getHttpCode()), response.getMessage()));
+                            }
+                            return sendResponse(session, wsRequest, response);
+                        })
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
             }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());
@@ -62,21 +105,21 @@ public class WSHandler implements WebSocketHandler {
         ))));
     }
 
-    private Mono<Void> sendErrorResponse(WebSocketSession session, WSRequest wsRequest, Throwable ex) {
+    private Mono<Void> sendErrorResponse(WebSocketSession session, String correlationId, Throwable ex) {
         ErrorResponse errorResponse;
         if (ex instanceof ResponseStatusException) {
             errorResponse = ErrorResponse.builder()
                     .status(((ResponseStatusException) ex).getStatusCode().value())
-                    .message(ex.getMessage())
+                    .message(((ResponseStatusException) ex).getReason())
                     .timestamp(System.currentTimeMillis())
-                    .correlationId(wsRequest.correlationId())
+                    .correlationId(correlationId)
                     .build();
         } else {
             errorResponse = ErrorResponse.builder()
                     .status(500)
                     .message(ErrorMessages.INTERNAL_SERVER_ERROR)
                     .timestamp(System.currentTimeMillis())
-                    .correlationId(wsRequest.correlationId())
+                    .correlationId(correlationId)
                     .build();
         }
 

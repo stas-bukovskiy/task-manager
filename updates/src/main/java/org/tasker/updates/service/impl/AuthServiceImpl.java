@@ -8,6 +8,7 @@ import org.tasker.common.models.commands.RegisterNewUserCommand;
 import org.tasker.common.models.queries.LoginUserQuery;
 import org.tasker.common.models.queries.VerifyTokenQuery;
 import org.tasker.common.models.response.DefaultResponse;
+import org.tasker.common.models.response.LoginUserResponse;
 import org.tasker.updates.models.request.LoginRequest;
 import org.tasker.updates.models.request.RegisterRequest;
 import org.tasker.updates.models.request.VerifyTokenRequest;
@@ -37,14 +38,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Mono<DefaultResponse> loginUser(LoginRequest loginRequest) {
+    public Mono<LoginUserResponse> loginUser(LoginRequest loginRequest) {
         return publisher.publishAndReceive(
                 LoginUserQuery.QUERY_NAME,
                 LoginUserQuery.builder()
                         .login(loginRequest.login())
                         .password(loginRequest.password())
                         .build()
-        ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, DefaultResponse.class));
+        ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, LoginUserResponse.class));
     }
 
     @Override
