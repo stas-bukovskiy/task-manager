@@ -1,6 +1,6 @@
 jwt:
   secret: k1opdcs23Kospos023dklsSD23ldsadpm23lasdDSamlxk
-  expiration: 86400000ms
+  expiration: 86400000s
 
 communication:
   auth:

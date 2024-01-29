@@ -56,7 +56,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     public Mono<Void> handle(UpdateUserCommand command) {
         return reservationRepository.existsByUsernameAndAggregateIdIsNot(command.username(), command.aggregateID())
                 .handle((exists, sink) -> {
-                    if (!exists) {
+                    if (exists) {
                         sink.error(new AlreadyExistsException("Username already taken"));
                     } else {
                         sink.next(false);
@@ -67,10 +67,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                     aggregate.updateUserInfo(command.username(), command.firstName(), command.lastName());
                     return aggregate;
                 })
-                .zipWith(reservationRepository.save(UsernameEmailReservation.builder()
-                        .aggregateId(command.aggregateID())
-                        .username(command.username())
-                        .build()))
-                .then();
+                .flatMap(eventStore::save)
+                .then(reservationRepository.updateUsername(command.aggregateID(), command.username()));
     }
 }

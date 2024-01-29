@@ -1,7 +1,10 @@
 package org.tasker.updates.exceptions;
 
-public class NotAuthenticatedException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+public class NotAuthenticatedException extends ResponseStatusException {
     public NotAuthenticatedException(String message) {
-        super(message);
+        super(HttpStatus.UNAUTHORIZED, message);
     }
 }

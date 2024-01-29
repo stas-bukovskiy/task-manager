@@ -1,15 +1,17 @@
 package org.tasker.auth.models.domain;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import org.tasker.auth.models.events.UserCreatedEvent;
 import org.tasker.auth.models.events.UserInfoUpdatedEvent;
 import org.tasker.common.es.AggregateRoot;
 import org.tasker.common.es.Event;
 import org.tasker.common.es.SerializerUtils;
 
-@Data
+@Getter
+@Setter
+@ToString
 @EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
 public class UserAggregate extends AggregateRoot {
 
     public static final String AGGREGATE_TYPE = "user_aggregate";

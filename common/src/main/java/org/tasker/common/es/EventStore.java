@@ -102,14 +102,14 @@ public class EventStore implements EventStoreDB {
         aggregate.toSnapshot();
         final var snapshot = EventSourcingUtils.snapshotFromAggregate(aggregate);
 
-        return databaseClient.sql("INSERT INTO snapshots (aggregate_id, aggregate_type, data, metadata, version, created_at) VALUES (:aggregate_id, :aggregate_type, :data, :version, now()) ON CONFLICT (aggregate_id) DO UPDATE SET data = :data, version = :version, created_at = now()")
+        return databaseClient.sql("INSERT INTO snapshots (aggregate_id, aggregate_type, data, version, created_at) VALUES (:aggregate_id, :aggregate_type, :data, :version, now()) ON CONFLICT (aggregate_id) DO UPDATE SET data = :data, version = :version, created_at = now()")
                 .bind("aggregate_id", snapshot.getAggregateId())
                 .bind("aggregate_type", snapshot.getAggregateType())
                 .bind("data", Objects.isNull(snapshot.getData()) ? new byte[]{} : snapshot.getData())
                 .bind("version", snapshot.getVersion())
                 .fetch()
                 .rowsUpdated()
-                .doOnError(throwable -> log.error("(saveSnapshot) error saving snapshot <{}>", snapshot, throwable))
+                .doOnError(ex -> log.error("(saveSnapshot) error saving snapshot <{}>", snapshot, ex))
                 .doOnSubscribe(result -> log.debug("(saveSnapshot) saved snapshot <{}> with row updated: {}", snapshot, result))
                 .then();
     }

@@ -19,6 +19,7 @@ import org.tasker.common.models.queries.GetUserQuery;
 import org.tasker.common.models.queries.LoginUserQuery;
 import org.tasker.common.models.queries.VerifyTokenQuery;
 import org.tasker.common.models.response.DefaultResponse;
+import org.tasker.common.models.response.LoginUserResponse;
 import org.tasker.common.models.response.UsersResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -162,19 +163,19 @@ public class UserRequestConsumer {
 
     private void handle(LoginUserQuery query, String routingKey) {
         authQueryService.handle(query)
-                .map(token -> DefaultResponse.builder()
-                        .data(token)
+                .map(loginData -> LoginUserResponse.builder()
+                        .data(loginData)
                         .httpCode(200)
                         .build())
                 .onErrorResume(ex -> {
                     if (ex instanceof InvalidCredentialsException) {
-                        return Mono.just(DefaultResponse.builder()
+                        return Mono.just(LoginUserResponse.builder()
                                 .httpCode(401)
                                 .message(ex.getMessage())
                                 .build());
                     } else {
                         log.error("Error while handling query", ex);
-                        return Mono.just(DefaultResponse.builder()
+                        return Mono.just(LoginUserResponse.builder()
                                 .httpCode(500)
                                 .message("Internal server error")
                                 .build());

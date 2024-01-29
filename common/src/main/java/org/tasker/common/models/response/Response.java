@@ -7,7 +7,7 @@ import lombok.Data;
 @Builder
 @Data
 public class Response<T> {
-    @JsonProperty("http_code")
+    @JsonProperty("status")
     private final int httpCode;
     private final String message;
     private final T data;

@@ -1,9 +1,6 @@
 package org.tasker.common.es;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -11,6 +8,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Builder
 public class Snapshot {
 
@@ -22,16 +20,4 @@ public class Snapshot {
     private long version;
     private LocalDateTime timeStamp;
 
-    @Override
-    public String toString() {
-        return "Snapshot{" +
-                "id=" + id +
-                ", aggregateId='" + aggregateId + '\'' +
-                ", aggregateType='" + aggregateType + '\'' +
-                ", data=" + data.length + " bytes" +
-                ", metaData=" + metaData.length + " bytes" +
-                ", version=" + version +
-                ", createdAt=" + timeStamp +
-                '}';
-    }
 }
