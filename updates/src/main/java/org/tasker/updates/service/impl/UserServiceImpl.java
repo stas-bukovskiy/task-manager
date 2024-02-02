@@ -11,7 +11,7 @@ import org.tasker.common.models.response.DefaultResponse;
 import org.tasker.common.models.response.UsersResponse;
 import org.tasker.updates.exceptions.ItemNotFountException;
 import org.tasker.updates.models.request.UpdateUserInfoRequest;
-import org.tasker.updates.output.event.AuthPublisher;
+import org.tasker.updates.output.event.AuthCommunicator;
 import org.tasker.updates.service.UserService;
 import reactor.core.publisher.Mono;
 
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final AuthPublisher publisher;
+    private final AuthCommunicator publisher;
 
     @Override
     public Mono<UserDto> getUserByAggregateId(String aggregateId) {

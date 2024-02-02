@@ -1,8 +1,8 @@
 
 package org.tasker.updates.input.ws;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -15,6 +15,7 @@ import org.tasker.updates.models.request.WSRequest;
 import org.tasker.updates.models.response.ErrorMessages;
 import org.tasker.updates.models.response.ErrorResponse;
 import org.tasker.updates.models.response.WSResponse;
+import org.tasker.updates.service.TaskService;
 import org.tasker.updates.service.UserService;
 import org.tasker.updates.service.ValidationService;
 import org.tasker.updates.service.WSRequestDeserializeService;
@@ -22,14 +23,22 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class WSHandler implements WebSocketHandler {
 
     private final UserService userService;
     private final ValidationService validator;
     private final WSRequestDeserializeService wsRequestDeserializeService;
+    private final TaskService taskService;
+
+    public WSHandler(UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService, @Qualifier("updatesTaskService") TaskService taskService) {
+        this.userService = userService;
+        this.validator = validator;
+        this.wsRequestDeserializeService = wsRequestDeserializeService;
+        this.taskService = taskService;
+    }
 
     @Override
+    // TODO: add timeout
     public Mono<Void> handle(WebSocketSession session) {
         return session.receive()
                 .<WSRequest>handle((requestRaw, sink) -> {
@@ -91,6 +100,13 @@ public class WSHandler implements WebSocketHandler {
                             log.error("Error while updating user info", ex);
                             return sendErrorResponse(session, wsRequest.correlationId(), ex);
                         });
+            }
+            case "get_user_statistic" -> {
+                return Mono.deferContextual(ctx -> {
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getUserStatistic(currentUserId);
+                        })
+                        .flatMap(userBytes -> sendResponse(session, wsRequest, userBytes));
             }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());

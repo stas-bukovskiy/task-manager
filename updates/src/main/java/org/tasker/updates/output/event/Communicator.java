@@ -2,8 +2,6 @@ package org.tasker.updates.output.event;
 
 import com.rabbitmq.client.AMQP;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.tasker.common.es.SerializerUtils;
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.*;
@@ -11,9 +9,7 @@ import reactor.rabbitmq.*;
 import java.util.UUID;
 
 @Slf4j
-@Service
-public class AuthPublisher {
-
+public class Communicator {
     private final Receiver receiver;
     private final Sender sender;
 
@@ -21,10 +17,7 @@ public class AuthPublisher {
     private final String responseExchangeName;
     private final String responseQueueName;
 
-    public AuthPublisher(Receiver receiver, Sender sender,
-                         @Value("${communication.auth.request-exchange}") String requestExchangeName,
-                         @Value("${communication.auth.response-exchange}") String responseExchangeName,
-                         @Value("${communication.auth.response-queue}") String responseQueueName) {
+    public Communicator(Receiver receiver, Sender sender, String requestExchangeName, String responseExchangeName, String responseQueueName) {
         this.receiver = receiver;
         this.sender = sender;
         this.requestExchangeName = requestExchangeName;
@@ -54,6 +47,4 @@ public class AuthPublisher {
                     return delivery.getBody();
                 });
     }
-
-
 }

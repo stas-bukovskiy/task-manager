@@ -1,0 +1,5 @@
+communication:
+  task:
+    request-queue: task-request-queue
+    request-exchange: task-request-exchange
+    response-exchange: task-response-exchange
