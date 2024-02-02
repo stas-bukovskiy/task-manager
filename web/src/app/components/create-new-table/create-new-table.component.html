@@ -1,0 +1,27 @@
+<div class="user-info-panel">
+  <form [formGroup]="createNewBoardForm" (ngSubmit)="createBoard()" class="userinfo-form">
+    <div class="form">
+      <h3 class="user-info-panel-header">User Information</h3>
+
+      <div class="form__inputs">
+
+        <div>
+          <p class="form__input-label">Title</p>
+          <input class="form__input" type="text" placeholder="New Board" formControlName="title" autocomplete="on">
+        </div>
+
+        <div>
+          <p class="form__input-label">Invite members</p>
+          <input class="form__input" type="text" placeholder="username or email" formControlName="inviteMember"
+                 autocomplete="on">
+        </div>
+
+        <div class="form__separator"></div>
+        <div class="form__button-section">
+          <button class="form__button form__button--submit" type="submit">Create</button>
+          <button class="form__button form__button--cancel" (click)="modalService.close()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
