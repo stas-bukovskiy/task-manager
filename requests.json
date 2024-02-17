@@ -1,0 +1,17 @@
+[
+  {
+    "correlation_id": "correlation_id",
+    "type": "search_people",
+    "data": {
+      "search": "user"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "create_board",
+    "data": {
+      "title": "New Board",
+      "invited_user_ids": []
+    }
+  }
+]

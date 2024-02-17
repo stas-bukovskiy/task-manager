@@ -8,6 +8,7 @@ import java.util.Objects;
 @Data
 @NoArgsConstructor
 public abstract class BaseEvent {
+
     protected String aggregateId;
 
     public BaseEvent(String aggregateId) {
@@ -15,4 +16,5 @@ public abstract class BaseEvent {
         if (aggregateId.isBlank()) throw new RuntimeException("BaseEvent aggregateId is required");
         this.aggregateId = aggregateId;
     }
+
 }

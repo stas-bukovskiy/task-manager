@@ -1,4 +1,4 @@
-package org.tasker.auth.models.events;
+package org.tasker.common.models.event;
 
 import lombok.Builder;
 import lombok.Data;

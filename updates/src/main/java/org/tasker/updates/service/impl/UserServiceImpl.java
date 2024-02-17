@@ -2,7 +2,9 @@ package org.tasker.updates.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.commands.UpdateUserCommand;
 import org.tasker.common.models.dto.UserDto;
@@ -14,6 +16,8 @@ import org.tasker.updates.models.request.UpdateUserInfoRequest;
 import org.tasker.updates.output.event.AuthCommunicator;
 import org.tasker.updates.service.UserService;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -52,5 +56,23 @@ public class UserServiceImpl implements UserService {
                                 .build()
                 )
                 .map(responseBytes -> SerializerUtils.deserializeFromJsonBytes(responseBytes, DefaultResponse.class));
+    }
+
+    @Override
+    public Mono<List<UserDto>> searchPeople(String search) {
+        return publisher.publishAndReceive(
+                        GetUserQuery.QUERY_NAME,
+                        GetUserQuery.builder()
+                                .search(search)
+                                .build()
+                )
+                .map(responseBytes -> SerializerUtils.deserializeFromJsonBytes(responseBytes, UsersResponse.class))
+                .handle((response, sink) -> {
+                    if (response.getHttpCode() != HttpStatus.OK.value()) {
+                        sink.error(new ResponseStatusException(HttpStatus.valueOf(response.getHttpCode()), response.getMessage()));
+                    } else {
+                        sink.next(response.getData());
+                    }
+                });
     }
 }

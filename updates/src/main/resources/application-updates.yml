@@ -7,3 +7,5 @@ communication:
     request-exchange: task-request-exchange
     response-exchange: task-response-exchange
     response-queue: task-response-queue
+  notification:
+    queue: notification-queue

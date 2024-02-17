@@ -3,8 +3,10 @@ package org.tasker.updates.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.models.commands.CreateBoardCommand;
 import org.tasker.common.models.queries.GetStatisticQuery;
 import org.tasker.common.models.response.GetStatisticResponse;
+import org.tasker.updates.models.request.CreateBoardRequest;
 import org.tasker.updates.output.event.TaskCommunicator;
 import org.tasker.updates.service.TaskService;
 import reactor.core.publisher.Mono;
@@ -23,5 +25,17 @@ public class TaskServiceImpl implements TaskService {
                         .userAggregateId(userAggregateId)
                         .build()
         ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, GetStatisticResponse.class));
+    }
+
+    @Override
+    public Mono<Void> createBoard(String currentUserId, CreateBoardRequest request) {
+        return communicator.publish(
+                CreateBoardCommand.COMMAND_NAME,
+                CreateBoardCommand.builder()
+                        .title(request.title())
+                        .ownerId(currentUserId)
+                        .invitedPeopleIds(request.invitedUserIds())
+                        .build()
+        );
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.models.commands.CreateBoardCommand;
 import org.tasker.common.models.dto.Statistic;
 import org.tasker.common.models.queries.GetStatisticQuery;
 import org.tasker.common.models.response.GetStatisticResponse;
@@ -25,6 +26,7 @@ public class TaskRequestConsumer {
     private final Receiver receiver;
     private final Sender sender;
     private final TaskMessagingSpecs taskMessagingSpecs;
+
     private final TaskService taskService;
     private final BoardService boardService;
 
@@ -40,6 +42,8 @@ public class TaskRequestConsumer {
                     switch (commandName) {
                         case GetStatisticQuery.QUERY_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetStatisticQuery.class), delivery.getProperties().getReplyTo());
+                        case CreateBoardCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), CreateBoardCommand.class));
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
@@ -69,6 +73,13 @@ public class TaskRequestConsumer {
                     OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
                     sender.send(Mono.just(message)).subscribe();
                 });
+    }
+
+    private void handle(CreateBoardCommand command) {
+        boardService.createBoard(command)
+                .doOnError(ex -> log.error("Failed to create board: {}", command, ex))
+                .doOnSuccess(v -> log.info("Created new board '{}' for user <{}>", command.title(), command.ownerId()))
+                .subscribe();
     }
 
 }

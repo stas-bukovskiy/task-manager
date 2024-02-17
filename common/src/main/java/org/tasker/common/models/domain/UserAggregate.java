@@ -1,11 +1,11 @@
-package org.tasker.auth.models.domain;
+package org.tasker.common.models.domain;
 
 import lombok.*;
-import org.tasker.auth.models.events.UserCreatedEvent;
-import org.tasker.auth.models.events.UserInfoUpdatedEvent;
 import org.tasker.common.es.AggregateRoot;
 import org.tasker.common.es.Event;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.models.event.UserCreatedEvent;
+import org.tasker.common.models.event.UserInfoUpdatedEvent;
 
 @Getter
 @Setter

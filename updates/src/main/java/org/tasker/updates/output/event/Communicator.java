@@ -47,4 +47,12 @@ public class Communicator {
                     return delivery.getBody();
                 });
     }
+
+    public Mono<Void> publish(String actionName, Object messageBody) {
+        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder().build();
+
+        return sender.send(Mono.just(new OutboundMessage(requestExchangeName, actionName, properties, SerializerUtils.serializeToJsonBytes(messageBody))))
+                .doOnSuccess(v -> log.info("Sent message to {}: {}", requestExchangeName, messageBody))
+                .doOnError(ex -> log.error("Failed to sent message to {}", actionName, ex));
+    }
 }
