@@ -12,7 +12,7 @@ import org.tasker.common.models.response.LoginUserResponse;
 import org.tasker.updates.models.request.LoginRequest;
 import org.tasker.updates.models.request.RegisterRequest;
 import org.tasker.updates.models.request.VerifyTokenRequest;
-import org.tasker.updates.output.event.AuthPublisher;
+import org.tasker.updates.output.event.AuthCommunicator;
 import org.tasker.updates.service.AuthService;
 import reactor.core.publisher.Mono;
 
@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final AuthPublisher publisher;
+    private final AuthCommunicator publisher;
 
     @Override
     public Mono<DefaultResponse> registerNewUser(RegisterRequest registerRequest) {

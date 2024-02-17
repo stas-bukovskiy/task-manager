@@ -1,8 +1,9 @@
 
 package org.tasker.updates.input.ws;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -10,55 +11,106 @@ import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.updates.input.event.NotificationHandler;
+import org.tasker.updates.models.request.CreateBoardRequest;
+import org.tasker.updates.models.request.SearchPeopleRequest;
 import org.tasker.updates.models.request.UpdateUserInfoRequest;
 import org.tasker.updates.models.request.WSRequest;
 import org.tasker.updates.models.response.ErrorMessages;
 import org.tasker.updates.models.response.ErrorResponse;
 import org.tasker.updates.models.response.WSResponse;
+import org.tasker.updates.service.TaskService;
 import org.tasker.updates.service.UserService;
 import org.tasker.updates.service.ValidationService;
 import org.tasker.updates.service.WSRequestDeserializeService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class WSHandler implements WebSocketHandler {
 
+    private final NotificationHandler notificationHandler;
     private final UserService userService;
     private final ValidationService validator;
     private final WSRequestDeserializeService wsRequestDeserializeService;
+    private final TaskService taskService;
+    private final ConcurrentMap<String, Set<WebSocketSession>> acitveSessions;
+
+    public WSHandler(UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService,
+                     @Qualifier("updatesTaskService") TaskService taskService, NotificationHandler notificationHandler) {
+        this.userService = userService;
+        this.validator = validator;
+        this.wsRequestDeserializeService = wsRequestDeserializeService;
+        this.taskService = taskService;
+        this.notificationHandler = notificationHandler;
+
+        acitveSessions = new ConcurrentHashMap<>();
+    }
+
+    @PostConstruct
+    public void init() {
+        notificationHandler.subscribeToQueue()
+                .doOnError(ex -> log.error("Error while subscribing to notification queues", ex))
+                .subscribe(notification -> {
+                    log.info("Notification sent: {}", notification);
+                    acitveSessions.getOrDefault(notification.toUserId(), Set.of()).forEach(session -> {
+                        if (session.isOpen()) {
+                            session.send(Mono.just(session.textMessage(SerializerUtils.serializeToJsonString(
+                                    notification
+                            )))).subscribe();
+                        } else {
+                            acitveSessions.get(notification.toUserId()).remove(session);
+                            log.info("Session {} is closed for user {}", session.getId(), notification.toUserId());
+                        }
+                    });
+                });
+    }
 
     @Override
+    // TODO: add timeout
     public Mono<Void> handle(WebSocketSession session) {
-        return session.receive()
-                .<WSRequest>handle((requestRaw, sink) -> {
-                    var payload = requestRaw.getPayload();
-                    var payloadBytes = new byte[payload.readableByteCount()];
-                    payload.read(payloadBytes);
+        return Flux.merge(
+                Flux.deferContextual(ctx -> {
+                    final String currentUserId = ctx.get("aggregate_id");
+                    acitveSessions.putIfAbsent(currentUserId, ConcurrentHashMap.newKeySet());
+                    acitveSessions.get(currentUserId).add(session);
+                    return Mono.just(currentUserId);
+                }).doOnNext(currentUserId -> log.info("New session: {}, for user {}", session.getId(), currentUserId)),
+                session.receive()
+                        .<WSRequest>handle((requestRaw, sink) -> {
+                            var payload = requestRaw.getPayload();
+                            var payloadBytes = new byte[payload.readableByteCount()];
+                            payload.read(payloadBytes);
 
-                    try {
-                        sink.next(wsRequestDeserializeService.deserialize(payloadBytes));
-                    } catch (Exception ex) {
-                        sink.error(ex);
-                    }
-                })
-                .flatMap(wsRequest -> delegateRequest(session, wsRequest)
+                            try {
+                                sink.next(wsRequestDeserializeService.deserialize(payloadBytes));
+                            } catch (Exception ex) {
+                                sink.error(ex);
+                            }
+                        })
+                        .flatMap(wsRequest -> delegateRequest(session, wsRequest)
+                                .onErrorResume(ex -> {
+                                    log.info("Error while handling WS request: {}", wsRequest, ex);
+                                    return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                                }))
                         .onErrorResume(ex -> {
-                            log.info("Error while handling WS request: {}", wsRequest, ex);
-                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
-                        }))
-                .onErrorResume(ex -> {
-                    if (ex instanceof ResponseStatusException responseStatusException) {
-                        if (responseStatusException.getStatusCode().is4xxClientError()) {
-                            log.info("Error while handling WS request: {}", responseStatusException.getReason());
-                        } else {
-                            log.error("Error while handling WS request", ex);
-                        }
-                    }
-                    return Mono.empty();
-                })
-                .then();
+                            if (ex instanceof ResponseStatusException responseStatusException) {
+                                if (responseStatusException.getStatusCode().is4xxClientError()) {
+                                    log.info("Error while handling WS request: {}", responseStatusException.getReason());
+                                } else {
+                                    log.error("Error while handling WS request", ex);
+                                }
+                            }
+                            return Mono.empty();
+                        })
+                        .thenMany(Flux.empty())
+        ).then();
     }
 
     private Mono<Void> delegateRequest(WebSocketSession session, WSRequest wsRequest) {
@@ -91,6 +143,42 @@ public class WSHandler implements WebSocketHandler {
                             log.error("Error while updating user info", ex);
                             return sendErrorResponse(session, wsRequest.correlationId(), ex);
                         });
+            }
+            case "get_user_statistic" -> {
+                return Mono.deferContextual(ctx -> {
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getUserStatistic(currentUserId);
+                        })
+                        .flatMap(userBytes -> sendResponse(session, wsRequest, userBytes));
+            }
+            case "search_people" -> {
+                return Mono.fromCallable(() -> {
+                            if (wsRequest.data() == null) {
+                                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                            }
+                            final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), SearchPeopleRequest.class);
+                            validator.validate(request, "search_people_request");
+
+                            return userService.searchPeople(request.search());
+                        })
+                        .flatMap(Function.identity())
+                        .flatMap(users -> sendResponse(session, wsRequest, users))
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
+            }
+            case "create_board" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), CreateBoardRequest.class);
+                    validator.validate(request, "create_board_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.createBoard(currentUserId, request);
+                });
             }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());

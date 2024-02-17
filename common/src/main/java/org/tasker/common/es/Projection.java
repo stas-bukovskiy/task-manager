@@ -1,19 +1,57 @@
 package org.tasker.common.es;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.tasker.common.output.event.EventsMessagingSpecs;
 import reactor.core.publisher.Mono;
+import reactor.rabbitmq.Receiver;
 
-public interface Projection {
+import java.util.Map;
+import java.util.function.Function;
 
-    @EventListener(ApplicationReadyEvent.class)
-    default void eventListener() {
-        this.declareQueue()
-                .subscribe(this::subscribeToQueue);
+@Slf4j
+public abstract class Projection {
+    private final Map<String, Function<Event, Mono<Void>>> eventHandlers;
+    private final Receiver receiver;
+    private final String aggregateType;
+
+    protected Projection(Receiver receiver, EventsMessagingSpecs messagingSpecs,
+                         Map<String, Function<Event, Mono<Void>>> eventHandlers,
+                         String aggregateType, String[] routingKeys) {
+        this.eventHandlers = eventHandlers;
+        this.receiver = receiver;
+        this.aggregateType = aggregateType;
+
+        messagingSpecs.declareBoundQueue(aggregateType, routingKeys).subscribe();
     }
 
-    void subscribeToQueue(String queueName);
+    @EventListener(ApplicationReadyEvent.class)
+    public void subscribeToQueue() {
+        receiver.consumeAutoAck(aggregateType)
+                .subscribe(delivery -> {
+                    log.info("Receive event to queue {}, with exchange {}, with key {}", aggregateType,
+                            delivery.getEnvelope().getExchange(), delivery.getEnvelope().getRoutingKey());
 
-    Mono<String> declareQueue();
+                    final Event event = SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), Event.class);
+                    processEvent(event).subscribe();
+                });
+    }
 
+    private Mono<Void> processEvent(Event event) {
+        if (!eventHandlers.containsKey(event.getEventType())) {
+            log.warn("Unknown event type: {}, for queue: {}", event, aggregateType);
+            return Mono.empty();
+        }
+
+        final var eventHandler = eventHandlers.get(event.getEventType());
+        return eventHandler.apply(event)
+                .onErrorResume(err -> {
+                    log.error("error occurred while processed board event {} for aggregateId {}", event.getEventType(), event.getAggregateId(), err);
+                    return handleError(err, event);
+                })
+                .doOnSuccess(v -> log.info("event {} for aggregateId {} processed successfully", event.getEventType(), event.getAggregateId()));
+    }
+
+    protected abstract Mono<Void> handleError(Throwable err, Event event);
 }

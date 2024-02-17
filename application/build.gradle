@@ -3,4 +3,5 @@ dependencies {
     implementation project(":config")
     implementation project(":updates")
     implementation project(":auth")
+    implementation project(":task")
 }

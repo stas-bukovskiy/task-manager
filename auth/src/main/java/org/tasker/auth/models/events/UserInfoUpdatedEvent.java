@@ -3,8 +3,8 @@ package org.tasker.auth.models.events;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.tasker.auth.models.domain.UserAggregate;
 import org.tasker.common.es.BaseEvent;
+import org.tasker.common.models.domain.UserAggregate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)

@@ -1,8 +1,8 @@
 package org.tasker.auth.mappers;
 
-import org.tasker.auth.models.domain.UserAggregate;
 import org.tasker.auth.models.domain.UserDocument;
 import org.tasker.common.es.Event;
+import org.tasker.common.models.domain.UserAggregate;
 import org.tasker.common.models.dto.UserDto;
 
 import java.util.stream.Collectors;
@@ -29,6 +29,7 @@ public final class UserMapper {
 
     public static UserDto fromDocToDto(UserDocument userDocument) {
         return UserDto.builder()
+                .id(userDocument.getAggregateId())
                 .username(userDocument.getUsername())
                 .email(userDocument.getEmail())
                 .firstName(userDocument.getFirstName())
