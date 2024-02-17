@@ -1,10 +1,10 @@
-package org.tasker.task.model.event;
+package org.tasker.common.models.event;
 
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.tasker.common.es.BaseEvent;
-import org.tasker.task.model.domain.BoardAggregate;
+import org.tasker.common.models.domain.BoardAggregate;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package org.tasker.task.mapper;
 
 import org.tasker.common.es.Event;
-import org.tasker.task.model.domain.BoardAggregate;
+import org.tasker.common.models.domain.BoardAggregate;
 import org.tasker.task.model.domain.BoardDocument;
 
 import java.util.HashSet;
