@@ -11,7 +11,7 @@ import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasker.common.es.SerializerUtils;
-import org.tasker.updates.input.event.NotificationHandler;
+import org.tasker.updates.input.event.UpdateHandler;
 import org.tasker.updates.models.request.CreateBoardRequest;
 import org.tasker.updates.models.request.SearchPeopleRequest;
 import org.tasker.updates.models.request.UpdateUserInfoRequest;
@@ -35,7 +35,7 @@ import java.util.function.Function;
 @Component
 public class WSHandler implements WebSocketHandler {
 
-    private final NotificationHandler notificationHandler;
+    private final UpdateHandler updateHandler;
     private final UserService userService;
     private final ValidationService validator;
     private final WSRequestDeserializeService wsRequestDeserializeService;
@@ -43,19 +43,19 @@ public class WSHandler implements WebSocketHandler {
     private final ConcurrentMap<String, Set<WebSocketSession>> acitveSessions;
 
     public WSHandler(UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService,
-                     @Qualifier("updatesTaskService") TaskService taskService, NotificationHandler notificationHandler) {
+                     @Qualifier("updatesTaskService") TaskService taskService, UpdateHandler updateHandler) {
         this.userService = userService;
         this.validator = validator;
         this.wsRequestDeserializeService = wsRequestDeserializeService;
         this.taskService = taskService;
-        this.notificationHandler = notificationHandler;
+        this.updateHandler = updateHandler;
 
         acitveSessions = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
     public void init() {
-        notificationHandler.subscribeToQueue()
+        updateHandler.subscribeToQueue()
                 .doOnError(ex -> log.error("Error while subscribing to notification queues", ex))
                 .subscribe(notification -> {
                     log.info("Notification sent: {}", notification);

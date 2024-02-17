@@ -1,10 +1,10 @@
-package org.tasker.task.model.domain;
+package org.tasker.common.models.domain;
 
 import lombok.*;
 import org.tasker.common.es.AggregateRoot;
 import org.tasker.common.es.Event;
 import org.tasker.common.es.SerializerUtils;
-import org.tasker.task.model.event.BoardCreatedEvent;
+import org.tasker.common.models.event.BoardCreatedEvent;
 
 import java.util.LinkedList;
 import java.util.List;
