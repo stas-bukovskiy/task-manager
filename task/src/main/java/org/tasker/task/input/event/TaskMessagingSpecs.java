@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tasker.common.models.commands.CreateBoardCommand;
+import org.tasker.common.models.commands.ReviewInvitationCommand;
 import org.tasker.common.models.queries.GetStatisticQuery;
 import reactor.core.publisher.Flux;
 import reactor.rabbitmq.*;
@@ -42,7 +43,7 @@ public final class TaskMessagingSpecs {
         var exchange = this.requestQueueSpec();
         sender.declareExchange(queue)
                 .then(sender.declareQueue(exchange))
-                .thenMany(Flux.just(GetStatisticQuery.QUERY_NAME, CreateBoardCommand.COMMAND_NAME)
+                .thenMany(Flux.just(GetStatisticQuery.QUERY_NAME, CreateBoardCommand.COMMAND_NAME, ReviewInvitationCommand.COMMAND_NAME)
                         .map(this::requestBindingSpecs)
                         .flatMap(sender::bind))
                 .doOnError(ex -> log.error("Error while initializing command queue: {}", ex.getMessage()))

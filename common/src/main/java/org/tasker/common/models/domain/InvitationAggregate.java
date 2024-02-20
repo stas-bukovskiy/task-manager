@@ -4,6 +4,7 @@ import lombok.*;
 import org.tasker.common.es.AggregateRoot;
 import org.tasker.common.es.Event;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.models.event.InvitationReviewedEvent;
 import org.tasker.common.models.event.UserInvitedEvent;
 
 @Getter
@@ -17,7 +18,8 @@ public class InvitationAggregate extends AggregateRoot {
 
     private String boardId;
     private String fromUserId;
-    private String toUserIds;
+    private String toUserId;
+    private Boolean accepted;
 
 
     public InvitationAggregate(String id) {
@@ -29,13 +31,19 @@ public class InvitationAggregate extends AggregateRoot {
         switch (event.getEventType()) {
             case UserInvitedEvent.USER_INVITED_V1 ->
                     handle(SerializerUtils.deserializeFromJsonBytes(event.getData(), UserInvitedEvent.class));
+            case InvitationReviewedEvent.INVITATION_REVIEWED_V1 ->
+                    handle(SerializerUtils.deserializeFromJsonBytes(event.getData(), InvitationReviewedEvent.class));
         }
     }
 
     private void handle(UserInvitedEvent event) {
         this.boardId = event.getBoardId();
         this.fromUserId = event.getFromUserId();
-        this.toUserIds = event.getToUserId();
+        this.toUserId = event.getToUserId();
+    }
+
+    private void handle(InvitationReviewedEvent event) {
+        this.accepted = event.isAccepted();
     }
 
     public void createInvitation(String boardTitle, String boardId, String fromUserName, String fromUserId, String toUserId) {
@@ -50,6 +58,22 @@ public class InvitationAggregate extends AggregateRoot {
 
         final byte[] dataBytes = SerializerUtils.serializeToJsonBytes(data);
         final var event = this.createEvent(UserInvitedEvent.USER_INVITED_V1, dataBytes);
+        this.apply(event);
+    }
+
+    public void reviewInvitation(String boardTitle, String toUsername, String toUserId, boolean accepted) {
+        final var data = InvitationReviewedEvent.builder()
+                .aggregateId(id)
+                .boardTitle(boardTitle)
+                .fromUserId(fromUserId)
+                .toUserId(toUserId)
+                .toUsername(toUsername)
+                .boardId(boardId)
+                .accepted(accepted)
+                .build();
+
+        final byte[] dataBytes = SerializerUtils.serializeToJsonBytes(data);
+        final var event = this.createEvent(InvitationReviewedEvent.INVITATION_REVIEWED_V1, dataBytes);
         this.apply(event);
     }
 }

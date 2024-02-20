@@ -13,5 +13,13 @@
       "title": "New Board",
       "invited_user_ids": []
     }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "review_invitation",
+    "data": {
+      "invitation_id": "invitation_id",
+      "is_accepted": true
+    }
   }
 ]

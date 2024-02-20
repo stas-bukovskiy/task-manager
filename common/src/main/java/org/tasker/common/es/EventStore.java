@@ -161,4 +161,17 @@ public class EventStore implements EventStoreDB {
                 .doOnSubscribe(result -> log.debug("(exists) successfully check on existence with aggregate ID <{}>: {}", aggregateId, result));
     }
 
+    @Override
+    public Mono<Boolean> exists(String aggregateId, String aggregateType) {
+        return databaseClient.sql("SELECT count(*) > 0 FROM events WHERE aggregate_id = :aggregate_id AND aggregate_type = :aggregate_type")
+                .bind("aggregate_id", aggregateId)
+                .bind("aggregate_type", aggregateType)
+                .map(row -> row.get(0, Boolean.class))
+                .first()
+                .defaultIfEmpty(false)
+                .doOnError(throwable -> log.error("(exists) error checking on existence with aggregate ID <{}>", aggregateId, throwable))
+                .doOnSubscribe(result -> log.debug("(exists) successfully check on existence with aggregate ID <{}>: {}", aggregateId, result));
+
+    }
+
 }

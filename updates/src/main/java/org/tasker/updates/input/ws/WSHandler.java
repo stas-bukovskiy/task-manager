@@ -12,17 +12,11 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.updates.input.event.UpdateHandler;
-import org.tasker.updates.models.request.CreateBoardRequest;
-import org.tasker.updates.models.request.SearchPeopleRequest;
-import org.tasker.updates.models.request.UpdateUserInfoRequest;
-import org.tasker.updates.models.request.WSRequest;
+import org.tasker.updates.models.request.*;
 import org.tasker.updates.models.response.ErrorMessages;
 import org.tasker.updates.models.response.ErrorResponse;
 import org.tasker.updates.models.response.WSResponse;
-import org.tasker.updates.service.TaskService;
-import org.tasker.updates.service.UserService;
-import org.tasker.updates.service.ValidationService;
-import org.tasker.updates.service.WSRequestDeserializeService;
+import org.tasker.updates.service.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -40,17 +34,20 @@ public class WSHandler implements WebSocketHandler {
     private final ValidationService validator;
     private final WSRequestDeserializeService wsRequestDeserializeService;
     private final TaskService taskService;
-    private final ConcurrentMap<String, Set<WebSocketSession>> acitveSessions;
+    private final InvitationService invitationService;
+    private final ConcurrentMap<String, Set<WebSocketSession>> activeSessions;
 
     public WSHandler(UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService,
-                     @Qualifier("updatesTaskService") TaskService taskService, UpdateHandler updateHandler) {
+                     @Qualifier("updatesTaskService") TaskService taskService, UpdateHandler updateHandler,
+                     @Qualifier("updatesInvitationService") InvitationService invitationService) {
         this.userService = userService;
         this.validator = validator;
         this.wsRequestDeserializeService = wsRequestDeserializeService;
         this.taskService = taskService;
         this.updateHandler = updateHandler;
+        this.invitationService = invitationService;
 
-        acitveSessions = new ConcurrentHashMap<>();
+        activeSessions = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
@@ -59,13 +56,13 @@ public class WSHandler implements WebSocketHandler {
                 .doOnError(ex -> log.error("Error while subscribing to notification queues", ex))
                 .subscribe(notification -> {
                     log.info("Notification sent: {}", notification);
-                    acitveSessions.getOrDefault(notification.toUserId(), Set.of()).forEach(session -> {
+                    activeSessions.getOrDefault(notification.toUserId(), Set.of()).forEach(session -> {
                         if (session.isOpen()) {
                             session.send(Mono.just(session.textMessage(SerializerUtils.serializeToJsonString(
                                     notification
                             )))).subscribe();
                         } else {
-                            acitveSessions.get(notification.toUserId()).remove(session);
+                            activeSessions.get(notification.toUserId()).remove(session);
                             log.info("Session {} is closed for user {}", session.getId(), notification.toUserId());
                         }
                     });
@@ -78,8 +75,8 @@ public class WSHandler implements WebSocketHandler {
         return Flux.merge(
                 Flux.deferContextual(ctx -> {
                     final String currentUserId = ctx.get("aggregate_id");
-                    acitveSessions.putIfAbsent(currentUserId, ConcurrentHashMap.newKeySet());
-                    acitveSessions.get(currentUserId).add(session);
+                    activeSessions.putIfAbsent(currentUserId, ConcurrentHashMap.newKeySet());
+                    activeSessions.get(currentUserId).add(session);
                     return Mono.just(currentUserId);
                 }).doOnNext(currentUserId -> log.info("New session: {}, for user {}", session.getId(), currentUserId)),
                 session.receive()
@@ -178,6 +175,19 @@ public class WSHandler implements WebSocketHandler {
 
                     final String currentUserId = ctx.get("aggregate_id");
                     return taskService.createBoard(currentUserId, request);
+                });
+            }
+            case "review_invitation" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), ReviewInitiationRequest.class);
+                    validator.validate(request, "review_invitation_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return invitationService.reviewInvitation(currentUserId, request);
                 });
             }
             default -> {

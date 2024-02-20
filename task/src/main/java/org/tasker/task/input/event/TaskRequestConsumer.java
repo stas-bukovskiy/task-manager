@@ -8,10 +8,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.commands.CreateBoardCommand;
+import org.tasker.common.models.commands.ReviewInvitationCommand;
 import org.tasker.common.models.dto.Statistic;
 import org.tasker.common.models.queries.GetStatisticQuery;
 import org.tasker.common.models.response.GetStatisticResponse;
 import org.tasker.task.service.BoardService;
+import org.tasker.task.service.InvitationService;
 import org.tasker.task.service.TaskService;
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.OutboundMessage;
@@ -29,6 +31,7 @@ public class TaskRequestConsumer {
 
     private final TaskService taskService;
     private final BoardService boardService;
+    private final InvitationService invitationService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void subscribeToQueue() {
@@ -44,6 +47,8 @@ public class TaskRequestConsumer {
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetStatisticQuery.class), delivery.getProperties().getReplyTo());
                         case CreateBoardCommand.COMMAND_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), CreateBoardCommand.class));
+                        case ReviewInvitationCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), ReviewInvitationCommand.class));
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
@@ -82,4 +87,10 @@ public class TaskRequestConsumer {
                 .subscribe();
     }
 
+    private void handle(ReviewInvitationCommand command) {
+        invitationService.reviewInvitation(command)
+                .doOnError(ex -> log.error("Failed to review invitation: {}", command, ex))
+                .doOnSuccess(v -> log.info("Reviewed invitation <{}> for user <{}>", command.invitationId(), command.userId()))
+                .subscribe();
+    }
 }
