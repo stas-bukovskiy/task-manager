@@ -1,6 +1,5 @@
 package org.tasker.common.models.event;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -9,30 +8,27 @@ import org.tasker.common.models.domain.InvitationAggregate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class UserInvitedEvent extends BaseEvent {
+public class InvitationReviewedEvent extends BaseEvent {
 
-    public static final String USER_INVITED_V1 = "USER_INVITED_V1";
+    public static final String INVITATION_REVIEWED_V1 = "INVITATION_REVIEWED_V1";
     public static final String AGGREGATE_TYPE = InvitationAggregate.AGGREGATE_TYPE;
 
-    @JsonProperty("board_title")
     private String boardTitle;
-    @JsonProperty("board_id")
     private String boardId;
-    @JsonProperty("from_user_name")
-    private String fromUserName;
-    @JsonProperty("from_user_id")
     private String fromUserId;
-    @JsonProperty("to_user_id")
+    private String toUsername;
     private String toUserId;
+    private boolean accepted;
 
     @Builder
-    public UserInvitedEvent(String aggregateId, String boardTitle, String boardId, String fromUserName, String fromUserId, String toUserId) {
+    public InvitationReviewedEvent(String aggregateId, String boardTitle, String boardId, String fromUserId,
+                                   String toUsername, String toUserId, boolean accepted) {
         super(aggregateId);
         this.boardTitle = boardTitle;
         this.boardId = boardId;
-        this.fromUserName = fromUserName;
-        this.fromUserId = fromUserId;
+        this.toUsername = toUsername;
         this.toUserId = toUserId;
+        this.fromUserId = fromUserId;
+        this.accepted = accepted;
     }
 }
-

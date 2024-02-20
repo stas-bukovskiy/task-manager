@@ -16,4 +16,6 @@ public interface EventStoreDB {
     <T extends AggregateRoot> Mono<T> load(final String aggregateId, final Class<T> aggregateType);
 
     Mono<Boolean> exists(final String aggregateId);
+
+    Mono<Boolean> exists(final String aggregateId, final String aggregateType);
 }

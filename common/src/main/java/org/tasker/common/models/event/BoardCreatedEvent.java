@@ -1,5 +1,6 @@
 package org.tasker.common.models.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,7 +17,9 @@ public class BoardCreatedEvent extends BaseEvent {
     public static final String AGGREGATE_TYPE = BoardAggregate.AGGREGATE_TYPE;
 
     private String title;
+    @JsonProperty("owner_id")
     private String ownerId;
+    @JsonProperty("invited_ids")
     private List<String> invitedIds;
 
     @Builder
