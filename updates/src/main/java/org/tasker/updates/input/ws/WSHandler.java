@@ -190,6 +190,43 @@ public class WSHandler implements WebSocketHandler {
                     return invitationService.reviewInvitation(currentUserId, request);
                 });
             }
+            case "get_boards" -> {
+                return Mono.deferContextual(ctx -> {
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getBoards(currentUserId);
+                        }).flatMap((response) -> {
+                            if (response.getHttpCode() != HttpStatus.OK.value()) {
+                                return Mono.error(new ResponseStatusException(HttpStatusCode.valueOf(response.getHttpCode()), response.getMessage()));
+                            }
+                            return sendResponse(session, wsRequest, response);
+                        })
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
+            }
+            case "get_board" -> {
+                return Mono.deferContextual(ctx -> {
+                            if (wsRequest.data() == null) {
+                                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                            }
+
+                            final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), GetBoardRequest.class);
+                            validator.validate(request, "get_board_request");
+
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getBoard(currentUserId, request.boardId());
+                        }).flatMap((response) -> {
+                            if (response.getHttpCode() != HttpStatus.OK.value()) {
+                                return Mono.error(new ResponseStatusException(HttpStatusCode.valueOf(response.getHttpCode()), response.getMessage()));
+                            }
+                            return sendResponse(session, wsRequest, response);
+                        })
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
+            }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());
                 return Mono.empty();

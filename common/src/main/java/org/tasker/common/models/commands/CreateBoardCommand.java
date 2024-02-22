@@ -8,7 +8,7 @@ import java.util.List;
 public record CreateBoardCommand(
         String title,
         String ownerId,
-        List<String> invitedPeopleIds
+        List<String> invitedUserIds
 ) {
     public static final String COMMAND_NAME = "create_board";
 }

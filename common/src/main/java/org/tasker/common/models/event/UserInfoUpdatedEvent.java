@@ -1,5 +1,6 @@
 package org.tasker.common.models.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +19,8 @@ public class UserInfoUpdatedEvent extends BaseEvent {
     private String lastName;
 
     @Builder
-    public UserInfoUpdatedEvent(String aggregateId, String username, String firstName, String lastName) {
+    public UserInfoUpdatedEvent(@JsonProperty("aggregate_id") String aggregateId, String username, String firstName,
+                                String lastName) {
         super(aggregateId);
         this.username = username;
         this.firstName = firstName;

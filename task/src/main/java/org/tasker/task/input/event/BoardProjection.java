@@ -19,7 +19,6 @@ import reactor.rabbitmq.Receiver;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,7 +48,6 @@ public class BoardProjection extends Projection {
                                                     .aggregateId(baseEvent.getAggregateId())
                                                     .title(baseEvent.getTitle())
                                                     .ownerId(baseEvent.getOwnerId())
-                                                    .invitedIds((baseEvent.getInvitedIds() == null) ? Set.of() : new HashSet<>(baseEvent.getInvitedIds()))
                                                     .processedEvents(Set.of(event.getId().toString()))
                                                     .build();
                                         }).flatMap(boardRepository::insert)

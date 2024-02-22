@@ -7,8 +7,6 @@ import lombok.EqualsAndHashCode;
 import org.tasker.common.es.BaseEvent;
 import org.tasker.common.models.domain.BoardAggregate;
 
-import java.util.List;
-
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class BoardCreatedEvent extends BaseEvent {
@@ -19,15 +17,12 @@ public class BoardCreatedEvent extends BaseEvent {
     private String title;
     @JsonProperty("owner_id")
     private String ownerId;
-    @JsonProperty("invited_ids")
-    private List<String> invitedIds;
 
     @Builder
-    public BoardCreatedEvent(String aggregateId, String title, String ownerId, List<String> invitedIds) {
+    public BoardCreatedEvent(@JsonProperty("aggregate_id") String aggregateId, String title, String ownerId) {
         super(aggregateId);
         this.title = title;
         this.ownerId = ownerId;
-        this.invitedIds = invitedIds;
     }
 }
 

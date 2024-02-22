@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.tasker.task.model.domain.BoardDocument;
 import org.tasker.task.output.persistance.CustomBoardRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -53,6 +54,28 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                 .doOnError(ex -> log.error(" error occurred while removing invited user from board doc", ex))
                 .doOnSuccess(v -> log.info("invited user removed from board doc"))
                 .then();
+    }
+
+    @Override
+    public Flux<BoardDocument> findBoardsByUserId(String userId) {
+        return template.query(BoardDocument.class)
+                .matching(new Criteria().orOperator(
+                        Criteria.where("owner_id").is(userId),
+                        Criteria.where("joined_ids").is(userId)
+                ))
+                .all();
+    }
+
+    @Override
+    public Mono<BoardDocument> findBoardByUserId(String userId, String boardId) {
+        return template.query(BoardDocument.class)
+                .matching(new Criteria().andOperator(
+                        Criteria.where("aggregate_id").is(boardId),
+                        new Criteria().orOperator(
+                                Criteria.where("owner_id").is(userId),
+                                Criteria.where("joined_ids").is(userId)
+                        )
+                )).first();
     }
 
 }

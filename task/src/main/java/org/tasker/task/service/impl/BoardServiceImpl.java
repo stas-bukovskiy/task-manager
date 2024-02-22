@@ -7,12 +7,17 @@ import org.tasker.common.es.EventStoreDB;
 import org.tasker.common.models.commands.CreateBoardCommand;
 import org.tasker.common.models.commands.InviteUsersCommand;
 import org.tasker.common.models.domain.BoardAggregate;
+import org.tasker.common.models.dto.BoardDto;
 import org.tasker.common.models.dto.BoardStatistic;
+import org.tasker.task.exception.BoardNotFoundException;
+import org.tasker.task.mapper.BoardMapper;
+import org.tasker.task.output.persistance.BoardRepository;
 import org.tasker.task.service.BoardService;
 import org.tasker.task.service.InvitationService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -22,6 +27,7 @@ public class BoardServiceImpl implements BoardService {
 
     private final EventStoreDB eventStore;
     private final InvitationService invitationService;
+    private final BoardRepository boardRepository;
 
     @Override
     public Mono<BoardStatistic> getStatistic(String userAggregateId) {
@@ -45,8 +51,21 @@ public class BoardServiceImpl implements BoardService {
                 .doOnSuccess(v -> Mono.defer(() -> invitationService.inviteUsersToBoard(InviteUsersCommand.builder()
                         .boardId(aggregateId)
                         .fromUserId(command.ownerId())
-                        .toUserIds(command.invitedPeopleIds())
+                        .toUserIds(command.invitedUserIds())
                         .build())).subscribe());
     }
 
+    @Override
+    public Mono<List<BoardDto>> getBoards(String userId) {
+        return boardRepository.findBoardsByUserId(userId)
+                .map(BoardMapper::fromDocToDto)
+                .collectList();
+    }
+
+    @Override
+    public Mono<BoardDto> getBoard(String userId, String boardId) {
+        return boardRepository.findBoardByUserId(userId, boardId)
+                .switchIfEmpty(Mono.error(new BoardNotFoundException()))
+                .map(BoardMapper::fromDocToDto);
+    }
 }

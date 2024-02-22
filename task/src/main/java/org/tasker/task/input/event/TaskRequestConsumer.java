@@ -10,8 +10,12 @@ import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.commands.CreateBoardCommand;
 import org.tasker.common.models.commands.ReviewInvitationCommand;
 import org.tasker.common.models.dto.Statistic;
+import org.tasker.common.models.queries.GetBoardQuery;
+import org.tasker.common.models.queries.GetBoardsQuery;
 import org.tasker.common.models.queries.GetStatisticQuery;
+import org.tasker.common.models.response.GetBoardsResponse;
 import org.tasker.common.models.response.GetStatisticResponse;
+import org.tasker.task.exception.BoardNotFoundException;
 import org.tasker.task.service.BoardService;
 import org.tasker.task.service.InvitationService;
 import org.tasker.task.service.TaskService;
@@ -49,6 +53,10 @@ public class TaskRequestConsumer {
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), CreateBoardCommand.class));
                         case ReviewInvitationCommand.COMMAND_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), ReviewInvitationCommand.class));
+                        case GetBoardsQuery.QUERY_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetBoardsQuery.class), delivery.getProperties().getReplyTo());
+                        case GetBoardQuery.QUERY_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetBoardQuery.class), delivery.getProperties().getReplyTo());
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
@@ -92,5 +100,56 @@ public class TaskRequestConsumer {
                 .doOnError(ex -> log.error("Failed to review invitation: {}", command, ex))
                 .doOnSuccess(v -> log.info("Reviewed invitation <{}> for user <{}>", command.invitationId(), command.userId()))
                 .subscribe();
+    }
+
+    private void handle(GetBoardsQuery query, String routingKey) {
+        boardService.getBoards(query.userId())
+                .map(boards -> GetBoardsResponse.builder()
+                        .httpCode(HttpStatus.OK.value())
+                        .data(boards)
+                        .build())
+                .onErrorResume(ex -> {
+                            log.error("Error while handling query", ex);
+                            return Mono.just(GetStatisticResponse.builder()
+                                    .httpCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .message("Internal server error")
+                                    .build());
+                        }
+                )
+                .subscribe(response -> {
+                    log.info("Sending response on {}: {}", routingKey, response);
+
+                    OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
+                    sender.send(Mono.just(message)).subscribe();
+                });
+    }
+
+    private void handle(GetBoardQuery query, String routingKey) {
+        boardService.getBoard(query.userId(), query.boardId())
+                .map(board -> GetStatisticResponse.builder()
+                        .httpCode(HttpStatus.OK.value())
+                        .data(board)
+                        .build())
+                .onErrorResume(ex -> {
+                            if (ex instanceof BoardNotFoundException) {
+                                return Mono.just(GetBoardsResponse.builder()
+                                        .httpCode(HttpStatus.NOT_FOUND.value())
+                                        .message(ex.getMessage())
+                                        .build());
+                            }
+
+                            log.error("Error while handling query", ex);
+                            return Mono.just(GetStatisticResponse.builder()
+                                    .httpCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .message("Internal server error")
+                                    .build());
+                        }
+                )
+                .subscribe(response -> {
+                    log.info("Sending response on {}: {}", routingKey, response);
+
+                    OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
+                    sender.send(Mono.just(message)).subscribe();
+                });
     }
 }

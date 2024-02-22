@@ -1,5 +1,6 @@
 package org.tasker.common.models.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,8 +22,8 @@ public class InvitationReviewedEvent extends BaseEvent {
     private boolean accepted;
 
     @Builder
-    public InvitationReviewedEvent(String aggregateId, String boardTitle, String boardId, String fromUserId,
-                                   String toUsername, String toUserId, boolean accepted) {
+    public InvitationReviewedEvent(@JsonProperty("aggregate_id") String aggregateId, String boardTitle, String boardId,
+                                   String fromUserId, String toUsername, String toUserId, boolean accepted) {
         super(aggregateId);
         this.boardTitle = boardTitle;
         this.boardId = boardId;

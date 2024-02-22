@@ -4,7 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.commands.CreateBoardCommand;
+import org.tasker.common.models.queries.GetBoardQuery;
+import org.tasker.common.models.queries.GetBoardsQuery;
 import org.tasker.common.models.queries.GetStatisticQuery;
+import org.tasker.common.models.response.GetBoardResponse;
+import org.tasker.common.models.response.GetBoardsResponse;
 import org.tasker.common.models.response.GetStatisticResponse;
 import org.tasker.updates.models.request.CreateBoardRequest;
 import org.tasker.updates.output.event.TaskCommunicator;
@@ -34,8 +38,29 @@ public class TaskServiceImpl implements TaskService {
                 CreateBoardCommand.builder()
                         .title(request.title())
                         .ownerId(currentUserId)
-                        .invitedPeopleIds(request.invitedUserIds())
+                        .invitedUserIds(request.invitedUserIds())
                         .build()
         );
+    }
+
+    @Override
+    public Mono<GetBoardsResponse> getBoards(String currentUserId) {
+        return communicator.publishAndReceive(
+                GetBoardsQuery.QUERY_NAME,
+                GetBoardsQuery.builder()
+                        .userId(currentUserId)
+                        .build()
+        ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, GetBoardsResponse.class));
+    }
+
+    @Override
+    public Mono<GetBoardResponse> getBoard(String currentUserId, String boardId) {
+        return communicator.publishAndReceive(
+                GetBoardQuery.QUERY_NAME,
+                GetBoardQuery.builder()
+                        .userId(currentUserId)
+                        .boardId(boardId)
+                        .build()
+        ).map(bytes -> SerializerUtils.deserializeFromJsonBytes(bytes, GetBoardResponse.class));
     }
 }

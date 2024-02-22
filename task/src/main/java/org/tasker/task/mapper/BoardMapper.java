@@ -2,8 +2,10 @@ package org.tasker.task.mapper;
 
 import org.tasker.common.es.Event;
 import org.tasker.common.models.domain.BoardAggregate;
+import org.tasker.common.models.dto.BoardDto;
 import org.tasker.task.model.domain.BoardDocument;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
@@ -22,6 +24,16 @@ public final class BoardMapper {
                 .processedEvents(agg.getChanges().stream()
                         .map(Event::getAggregateId)
                         .collect(Collectors.toSet()))
+                .build();
+    }
+
+    public static BoardDto fromDocToDto(BoardDocument doc) {
+        return BoardDto.builder()
+                .id(doc.getAggregateId())
+                .title(doc.getTitle())
+                .ownerId(doc.getOwnerId())
+                .invitedIds(doc.getInvitedIds() == null ? new ArrayList<>() : new ArrayList<>(doc.getInvitedIds()))
+                .joinedIds(doc.getJoinedIds() == null ? new ArrayList<>() : new ArrayList<>(doc.getJoinedIds()))
                 .build();
     }
 }

@@ -26,7 +26,8 @@ public class UserInvitedEvent extends BaseEvent {
     private String toUserId;
 
     @Builder
-    public UserInvitedEvent(String aggregateId, String boardTitle, String boardId, String fromUserName, String fromUserId, String toUserId) {
+    public UserInvitedEvent(@JsonProperty("aggregate_id") String aggregateId, String boardTitle, String boardId,
+                            String fromUserName, String fromUserId, String toUserId) {
         super(aggregateId);
         this.boardTitle = boardTitle;
         this.boardId = boardId;
