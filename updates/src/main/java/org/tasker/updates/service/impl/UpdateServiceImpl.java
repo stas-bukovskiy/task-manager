@@ -58,7 +58,7 @@ public class UpdateServiceImpl implements UpdateService {
                         .toUserId(baseEvent.getToUserId())
                         .type(UserInvitedEvent.USER_INVITED_V1)
                         .updateType(UpdateResponse.UpdateType.NOTIFICATION)
-                        .message("You have been invited to board: " + baseEvent.getBoardTitle() + " by " + baseEvent.getFromUserName())
+                        .message("You have been invited to board: " + baseEvent.getAggregateId() + " by " + baseEvent.getFromUserId())
                         .data(baseEvent)
                         .build(),
                 UpdateResponse.builder()
@@ -71,18 +71,18 @@ public class UpdateServiceImpl implements UpdateService {
 
     private List<UpdateResponse<?>> processInvitationReviewedEvent(InvitationReviewedEvent invitationReviewedEvent) {
         return List.of(
+//                UpdateResponse.builder()
+//                        .toUserId(invitationReviewedEvent.get())
+//                        .type(InvitationReviewedEvent.INVITATION_REVIEWED_V1)
+//                        .updateType(UpdateResponse.UpdateType.NOTIFICATION)
+//                        .message(invitationReviewedEvent.isAccepted() ?
+//                                String.format("Your invitation for board '%s' has been accepted by %s", invitationReviewedEvent.getBoardTitle(), invitationReviewedEvent.getToUsername())
+//                                : String.format("Your invitation for board '%s' has been rejected by %s", invitationReviewedEvent.getBoardTitle(), invitationReviewedEvent.getToUsername()))
+//                        .data(invitationReviewedEvent)
+//                        .data(invitationReviewedEvent)
+//                        .build(),
                 UpdateResponse.builder()
-                        .toUserId(invitationReviewedEvent.getFromUserId())
-                        .type(InvitationReviewedEvent.INVITATION_REVIEWED_V1)
-                        .updateType(UpdateResponse.UpdateType.NOTIFICATION)
-                        .message(invitationReviewedEvent.isAccepted() ?
-                                String.format("Your invitation for board '%s' has been accepted by %s", invitationReviewedEvent.getBoardTitle(), invitationReviewedEvent.getToUsername())
-                                : String.format("Your invitation for board '%s' has been rejected by %s", invitationReviewedEvent.getBoardTitle(), invitationReviewedEvent.getToUsername()))
-                        .data(invitationReviewedEvent)
-                        .data(invitationReviewedEvent)
-                        .build(),
-                UpdateResponse.builder()
-                        .toUserId(invitationReviewedEvent.getToUserId())
+                        .toUserId(invitationReviewedEvent.getUserId())
                         .type(InvitationReviewedEvent.INVITATION_REVIEWED_V1)
                         .updateType(UpdateResponse.UpdateType.UPDATE)
                         .data(invitationReviewedEvent)

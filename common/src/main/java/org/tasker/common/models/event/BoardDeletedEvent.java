@@ -9,21 +9,14 @@ import org.tasker.common.models.domain.BoardAggregate;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class UserInvitedEvent extends BaseEvent {
+public class BoardDeletedEvent extends BaseEvent {
 
-    public static final String USER_INVITED_V1 = "USER_INVITED_V1";
+    public static final String BOARD_DELETED_V1 = "BOARD_DELETED_V1";
     public static final String AGGREGATE_TYPE = BoardAggregate.AGGREGATE_TYPE;
 
-    @JsonProperty("from_user_id")
-    private String fromUserId;
-    @JsonProperty("to_user_id")
-    private String toUserId;
-
     @Builder
-    public UserInvitedEvent(@JsonProperty("aggregate_id") String aggregateId, String fromUserId, String toUserId) {
+    public BoardDeletedEvent(@JsonProperty("aggregate_id") String aggregateId) {
         super(aggregateId);
-        this.fromUserId = fromUserId;
-        this.toUserId = toUserId;
     }
-}
 
+}

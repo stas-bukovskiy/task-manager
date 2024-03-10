@@ -18,7 +18,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
     @Override
     public Mono<Void> addInvitedId(String aggregateId, String invitedId, String processedEventId) {
-        Update update = new Update().push("invited_ids", invitedId);
+        Update update = new Update().addToSet("invited_ids", invitedId);
         update.push("processed_events", processedEventId);
         return template.update(BoardDocument.class)
                 .matching(Criteria.where("aggregate_id").is(aggregateId))
@@ -31,7 +31,7 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
 
     @Override
     public Mono<Void> addJoinedId(String aggregateId, String joinedUserId, String processedEventId) {
-        Update update = new Update().push("joined_ids", joinedUserId);
+        Update update = new Update().addToSet("joined_ids", joinedUserId);
         update.push("processed_events", processedEventId);
         update.pull("invited_ids", joinedUserId);
         return template.update(BoardDocument.class)
@@ -57,6 +57,19 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
     }
 
     @Override
+    public Mono<Void> removeJoinedId(String aggregateId, String memberId, String processedEventId) {
+        Update update = new Update().pull("joined_ids", memberId);
+        update.push("processed_events", processedEventId);
+        return template.update(BoardDocument.class)
+                .matching(Criteria.where("aggregate_id").is(aggregateId))
+                .apply(update)
+                .all()
+                .doOnError(ex -> log.error(" error occurred while removing joined user from board doc", ex))
+                .doOnSuccess(v -> log.info("joined user removed from board doc"))
+                .then();
+    }
+
+    @Override
     public Flux<BoardDocument> findBoardsByUserId(String userId) {
         return template.query(BoardDocument.class)
                 .matching(new Criteria().orOperator(
@@ -78,4 +91,16 @@ public class CustomBoardRepositoryImpl implements CustomBoardRepository {
                 )).first();
     }
 
+    @Override
+    public Mono<Void> updateTitle(String aggregateId, String title, String processedEventId) {
+        Update update = new Update().set("title", title);
+        update.push("processed_events", processedEventId);
+        return template.update(BoardDocument.class)
+                .matching(Criteria.where("aggregate_id").is(aggregateId))
+                .apply(update)
+                .all()
+                .doOnError(ex -> log.error(" error occurred while updating title of board doc", ex))
+                .doOnSuccess(v -> log.info("title updated for board doc"))
+                .then();
+    }
 }

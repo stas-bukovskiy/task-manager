@@ -4,7 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record ReviewInvitationCommand(
-        String invitationId,
+        String boardId,
         String userId,
         boolean isAccepted
 ) {

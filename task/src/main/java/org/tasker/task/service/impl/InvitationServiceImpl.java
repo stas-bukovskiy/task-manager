@@ -4,18 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.models.commands.DeleteInvitationCommand;
 import org.tasker.common.models.commands.InviteUsersCommand;
 import org.tasker.common.models.commands.ReviewInvitationCommand;
-import org.tasker.common.models.domain.BoardAggregate;
-import org.tasker.common.models.domain.InvitationAggregate;
 import org.tasker.common.models.domain.UserAggregate;
+import org.tasker.task.exception.ItemNotFoundException;
+import org.tasker.task.service.BoardAggService;
 import org.tasker.task.service.InvitationService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
-
-import java.util.ArrayList;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,72 +23,76 @@ import java.util.UUID;
 public class InvitationServiceImpl implements InvitationService {
 
     private final EventStoreDB eventStore;
+    private final BoardAggService boardService;
 
     @Override
     public Mono<Void> inviteUsersToBoard(InviteUsersCommand command) {
-        return Mono.just(command.toUserIds() == null ? new ArrayList<Tuple2<String, InvitationAggregate>>() :
-                        command.toUserIds().stream()
-                                .filter(toUserId -> !toUserId.equals(command.fromUserId()))
-                                .map(toUserId -> {
-                                    final var aggregateId = UUID.randomUUID().toString();
-                                    return Tuples.of(toUserId, new InvitationAggregate(aggregateId));
+        return boardService.getBoardAgg(command.boardId(), command.fromUserId())
+                .zipWith(eventStore.exists(command.fromUserId(), UserAggregate.AGGREGATE_TYPE)
+                        .handle((exists, sink) -> {
+                            if (!exists) {
+                                sink.error(new ItemNotFoundException("User not found for id: " + command.fromUserId()));
+                            } else {
+                                sink.next(true);
+                            }
+                        })
+                        .flatMapMany(ignored2 -> Flux.fromIterable(command.toUserIds())
+                                .publishOn(Schedulers.boundedElastic())
+                                .map(userId -> {
+                                    var isExist = eventStore.exists(userId, UserAggregate.AGGREGATE_TYPE).block();
+                                    return Tuples.of(userId, isExist == Boolean.TRUE);
                                 })
-                                .toList())
-                .zipWith(eventStore.load(command.boardId(), BoardAggregate.class), (invitationAggs, board) ->
-                        Tuples.of(invitationAggs, board.getTitle()))
-                .zipWith(eventStore.load(command.fromUserId(), UserAggregate.class), (tuple, fromUser) ->
-                        Tuples.of(tuple.getT1(), tuple.getT2(), fromUser.getUsername()))
-                .flatMapIterable(tuple -> {
-                    final var invitationAggs = tuple.getT1();
-                    final var boardTitle = tuple.getT2();
-                    final var fromUsername = tuple.getT3();
+                                .filter(tuple -> {
+                                    if (tuple.getT2())
+                                        return true;
 
-                    return invitationAggs.stream()
-                            .map(invAggTuple -> {
-                                final var toUserId = invAggTuple.getT1();
-                                final var invitationAggregate = invAggTuple.getT2();
+                                    log.warn("Skipped user invitation: user {} does not exist", tuple.getT1());
+                                    return false;
+                                })
+                                .map(Tuple2::getT1)
+                        )
+                        .collectList())
+                .map(tuple -> {
+                    final var board = tuple.getT1();
+                    final var existedUserIds = tuple.getT2().stream()
+                            .filter(userId -> !board.getInvitedIds().contains(userId));
 
-                                invitationAggregate.createInvitation(boardTitle, command.boardId(), fromUsername, command.fromUserId(), toUserId);
-                                return invitationAggregate;
-                            })
-                            .toList();
+                    existedUserIds.forEach(board::inviteUser);
+                    return board;
                 })
                 .flatMap(eventStore::save)
-                .doOnError(e -> log.error("Error while saving invitation", e))
-                .doOnNext(agg -> log.info("Invitation saved: {}", agg))
                 .then();
     }
 
     @Override
     public Mono<Void> reviewInvitation(ReviewInvitationCommand command) {
-        return eventStore.exists(command.invitationId(), InvitationAggregate.AGGREGATE_TYPE)
-                .flatMap(exists -> {
-                    if (exists != Boolean.TRUE) {
-                        return Mono.empty();
-                    }
-                    return eventStore.load(command.invitationId(), InvitationAggregate.class);
-                })
-                .flatMap(agg -> {
-                    if (agg.getAccepted() == null) {
-                        return Mono.just(agg);
-                    }
-
-                    return Mono.empty();
-                })
-                .zipWhen(agg -> eventStore.load(agg.getBoardId(), BoardAggregate.class),
-                        (agg, board) -> Tuples.of(agg, board.getTitle()))
-                .zipWhen(tuple -> eventStore.load(tuple.getT1().getToUserId(), UserAggregate.class),
-                        (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user.getUsername()))
+        return boardService.getBoardAgg(command.boardId())
+                .filter(board -> board.getInvitedIds().contains(command.userId()))
+                .zipWith(eventStore.exists(command.userId())
+                        .handle((exists, sink) -> {
+                            if (!exists) {
+                                sink.error(new ItemNotFoundException("User not found for id: " + command.userId()));
+                            } else {
+                                sink.next(true);
+                            }
+                        }))
                 .map(tuple -> {
-                    final var agg = tuple.getT1();
-                    final var boardTitle = tuple.getT2();
-                    final var username = tuple.getT3();
+                    final var board = tuple.getT1();
 
-                    agg.reviewInvitation(boardTitle, username, command.userId(), command.isAccepted());
-                    return agg;
+                    board.reviewInvitation(command.userId(), command.isAccepted());
+                    return board;
+                })
+                .flatMap(eventStore::save);
+    }
+
+    @Override
+    public Mono<Void> deleteInvitation(DeleteInvitationCommand command) {
+        return boardService.getBoardAgg(command.boardId(), command.ownerId())
+                .map(board -> {
+                    board.deleteIntimation(command.userId());
+                    return board;
                 })
                 .flatMap(eventStore::save)
-                .doOnError(e -> log.error("Error while saving reviewed invitation", e))
                 .then();
     }
 

@@ -18,8 +18,59 @@
     "correlation_id": "correlation_id",
     "type": "review_invitation",
     "data": {
-      "invitation_id": "invitation_id",
+      "board_id": "board_id",
       "is_accepted": true
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_boards",
+    "data": {}
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_board",
+    "data": {
+      "board_id": "board_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "update_board",
+    "data": {
+      "board_id": "board_id",
+      "title": "New Title"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "invite_users",
+    "data": {
+      "board_id": "board_id",
+      "to_user_ids": []
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_invitation",
+    "data": {
+      "board_id": "board_id",
+      "user_id": "user_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_member",
+    "data": {
+      "board_id": "board_id",
+      "user_id": "user_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_board",
+    "data": {
+      "board_id": "board_id"
     }
   }
 ]

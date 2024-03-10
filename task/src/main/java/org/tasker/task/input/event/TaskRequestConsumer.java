@@ -7,15 +7,15 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.tasker.common.es.SerializerUtils;
-import org.tasker.common.models.commands.CreateBoardCommand;
-import org.tasker.common.models.commands.ReviewInvitationCommand;
+import org.tasker.common.models.commands.*;
 import org.tasker.common.models.dto.Statistic;
 import org.tasker.common.models.queries.GetBoardQuery;
 import org.tasker.common.models.queries.GetBoardsQuery;
 import org.tasker.common.models.queries.GetStatisticQuery;
 import org.tasker.common.models.response.GetBoardsResponse;
 import org.tasker.common.models.response.GetStatisticResponse;
-import org.tasker.task.exception.BoardNotFoundException;
+import org.tasker.task.exception.ExpectedException;
+import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.service.BoardService;
 import org.tasker.task.service.InvitationService;
 import org.tasker.task.service.TaskService;
@@ -23,6 +23,9 @@ import reactor.core.publisher.Mono;
 import reactor.rabbitmq.OutboundMessage;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.Sender;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -57,9 +60,48 @@ public class TaskRequestConsumer {
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetBoardsQuery.class), delivery.getProperties().getReplyTo());
                         case GetBoardQuery.QUERY_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetBoardQuery.class), delivery.getProperties().getReplyTo());
+                        case DeleteBoardCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), DeleteBoardCommand.class));
+                        case DeleteInvitationCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), DeleteInvitationCommand.class));
+                        case DeleteMemberCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), DeleteMemberCommand.class));
+                        case UpdateBoardCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), UpdateBoardCommand.class));
+                        case InviteUsersCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), InviteUsersCommand.class));
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
+    }
+
+    private void handle(InviteUsersCommand command) {
+        invitationService.inviteUsersToBoard(command)
+                .doOnError(ex -> onError("Failed to invite users: {}", ex, command))
+                .doOnSuccess(v -> log.info("Invited users <{}> to board <{}> for user <{}>", command.toUserIds(), command.boardId(), command.fromUserId()))
+                .subscribe();
+    }
+
+    private void handle(UpdateBoardCommand command) {
+        boardService.updateBoard(command.boardId(), command.userId(), command.title())
+                .doOnError(ex -> onError("Failed to update board: {}", ex, command))
+                .doOnSuccess(v -> log.info("Updated board <{}> for user <{}>", command.boardId(), command.userId()))
+                .subscribe();
+    }
+
+
+    private void handle(DeleteMemberCommand command) {
+        boardService.deleteMember(command.boardId(), command.userId(), command.memberId())
+                .doOnError(ex -> onError("Failed to delete member: {}", ex, command))
+                .doOnSuccess(v -> log.info("Deleted member <{}> from board <{}> for user <{}>", command.memberId(), command.boardId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(DeleteInvitationCommand command) {
+        invitationService.deleteInvitation(command)
+                .doOnError(ex -> onError("Failed to delete invitation: {}", ex, command))
+                .doOnSuccess(v -> log.info("Deleted invitation for board <{}> and user <{}>", command.boardId(), command.userId()))
+                .subscribe();
     }
 
     private void handle(GetStatisticQuery query, String routingKey) {
@@ -90,15 +132,15 @@ public class TaskRequestConsumer {
 
     private void handle(CreateBoardCommand command) {
         boardService.createBoard(command)
-                .doOnError(ex -> log.error("Failed to create board: {}", command, ex))
+                .doOnError(ex -> onError("Failed to create board: {}", ex, command))
                 .doOnSuccess(v -> log.info("Created new board '{}' for user <{}>", command.title(), command.ownerId()))
                 .subscribe();
     }
 
     private void handle(ReviewInvitationCommand command) {
         invitationService.reviewInvitation(command)
-                .doOnError(ex -> log.error("Failed to review invitation: {}", command, ex))
-                .doOnSuccess(v -> log.info("Reviewed invitation <{}> for user <{}>", command.invitationId(), command.userId()))
+                .doOnError(ex -> onError("Failed to review invitation: {}", ex, command))
+                .doOnSuccess(v -> log.info("Reviewed invitation <{}> for user <{}>", command.boardId(), command.userId()))
                 .subscribe();
     }
 
@@ -131,7 +173,7 @@ public class TaskRequestConsumer {
                         .data(board)
                         .build())
                 .onErrorResume(ex -> {
-                            if (ex instanceof BoardNotFoundException) {
+                    if (ex instanceof ItemNotFoundException) {
                                 return Mono.just(GetBoardsResponse.builder()
                                         .httpCode(HttpStatus.NOT_FOUND.value())
                                         .message(ex.getMessage())
@@ -151,5 +193,22 @@ public class TaskRequestConsumer {
                     OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
                     sender.send(Mono.just(message)).subscribe();
                 });
+    }
+
+    private void handle(DeleteBoardCommand command) {
+        boardService.deleteBoard(command.boardId(), command.userId())
+                .doOnError(ex -> onError("Failed to delete board: {}", ex, command))
+                .doOnSuccess(v -> log.info("Deleted board <{}> for user <{}>", command.boardId(), command.userId()))
+                .subscribe();
+    }
+
+    private void onError(String message, Throwable ex, Object... args) {
+        var argsList = new ArrayList<>(Arrays.asList(args));
+        argsList.add(ex);
+        if (ex instanceof ExpectedException) {
+            log.warn(message, argsList.toArray());
+        } else {
+            log.error(message, argsList.toArray());
+        }
     }
 }

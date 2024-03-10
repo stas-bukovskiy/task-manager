@@ -7,9 +7,7 @@ import org.tasker.common.es.EventStoreDB;
 import org.tasker.common.es.Projection;
 import org.tasker.common.es.SerializerUtils;
 import org.tasker.common.models.domain.BoardAggregate;
-import org.tasker.common.models.event.BoardCreatedEvent;
-import org.tasker.common.models.event.InvitationReviewedEvent;
-import org.tasker.common.models.event.UserInvitedEvent;
+import org.tasker.common.models.event.*;
 import org.tasker.common.output.event.EventsMessagingSpecs;
 import org.tasker.task.mapper.BoardMapper;
 import org.tasker.task.model.domain.BoardDocument;
@@ -28,8 +26,6 @@ public class BoardProjection extends Projection {
 
     private final static String[] ROUTING_KEYS = new String[]{
             BoardAggregate.AGGREGATE_TYPE + ".*",
-            UserInvitedEvent.AGGREGATE_TYPE + "." + UserInvitedEvent.USER_INVITED_V1,
-            InvitationReviewedEvent.AGGREGATE_TYPE + "." + InvitationReviewedEvent.INVITATION_REVIEWED_V1
     };
 
     private final BoardRepository boardRepository;
@@ -56,11 +52,11 @@ public class BoardProjection extends Projection {
                 UserInvitedEvent.USER_INVITED_V1, (event -> Mono.just(
                                 SerializerUtils.deserializeFromJsonBytes(event.getData(), UserInvitedEvent.class)
                         )
-                        .zipWhen(userInvitedEvent -> boardRepository.findByAggregateId(userInvitedEvent.getBoardId())
+                        .zipWhen(userInvitedEvent -> boardRepository.findByAggregateId(userInvitedEvent.getAggregateId())
                                 .repeatWhenEmpty(3, (retrySpec) -> retrySpec.delayElements(Duration.of(1, ChronoUnit.SECONDS))))
                         .flatMap(tuple -> {
                             final var userInvitedEvent = tuple.getT1();
-                            return boardRepository.addInvitedId(userInvitedEvent.getBoardId(), userInvitedEvent.getToUserId(), event.getId().toString());
+                            return boardRepository.addInvitedId(userInvitedEvent.getAggregateId(), userInvitedEvent.getToUserId(), event.getId().toString());
                         })
                         .doOnError(err -> log.error("error occurred while adding invited user to board doc", err))
                         .doOnSuccess(v -> log.info("invited user added to board doc"))
@@ -68,18 +64,39 @@ public class BoardProjection extends Projection {
                 ),
                 InvitationReviewedEvent.INVITATION_REVIEWED_V1, (event -> Mono.just(
                                 SerializerUtils.deserializeFromJsonBytes(event.getData(), InvitationReviewedEvent.class)
-                        ).zipWhen(invitationReviewedEvent -> boardRepository.findByAggregateId(invitationReviewedEvent.getBoardId()))
+                        ).zipWhen(invitationReviewedEvent -> boardRepository.findByAggregateId(invitationReviewedEvent.getAggregateId()))
                         .flatMap(tuple -> {
                             final var invitationReviewedEvent = tuple.getT1();
                             final var boardDoc = tuple.getT2();
 
                             if (invitationReviewedEvent.isAccepted()) {
-                                return boardRepository.addJoinedId(boardDoc.getAggregateId(), invitationReviewedEvent.getToUserId(), event.getId().toString());
+                                return boardRepository.addJoinedId(boardDoc.getAggregateId(), invitationReviewedEvent.getUserId(), event.getId().toString());
                             } else {
-                                return boardRepository.removeInvitedId(boardDoc.getAggregateId(), invitationReviewedEvent.getToUserId(), event.getId().toString());
+                                return boardRepository.removeInvitedId(boardDoc.getAggregateId(), invitationReviewedEvent.getUserId(), event.getId().toString());
                             }
                         })
                         .then()
+                ),
+                BoardDeletedEvent.BOARD_DELETED_V1, (event -> boardRepository.deleteByAggregateId(event.getAggregateId())
+                        .doOnSuccess(v -> log.info("board doc deleted for aggregateId: {}", event.getAggregateId()))
+                ),
+                BoardMemberDeletedEvent.BOARD_MEMBER_DELETED_V1, (event -> Mono.just(
+                                SerializerUtils.deserializeFromJsonBytes(event.getData(), BoardMemberDeletedEvent.class)
+                        )
+                        .flatMap(boardMemberDeletedEvent -> boardRepository.removeInvitedId(boardMemberDeletedEvent.getAggregateId(), boardMemberDeletedEvent.getMemberId(), event.getId().toString())
+                                .then(boardRepository.removeJoinedId(boardMemberDeletedEvent.getAggregateId(), boardMemberDeletedEvent.getMemberId(), event.getId().toString())))
+                        .then()
+                ),
+                BoardUpdatedEvent.BOARD_UPDATED_V1, (event -> Mono.just(
+                        SerializerUtils.deserializeFromJsonBytes(event.getData(), BoardUpdatedEvent.class)
+                ).flatMap(boardUpdatedEvent -> boardRepository.updateTitle(event.getAggregateId(), boardUpdatedEvent.getTitle(), event.getId().toString())
+                        .doOnSuccess(v -> log.info("board doc title updated {}", boardUpdatedEvent)
+                        ))
+                ),
+                InvitationDeletedEvent.INVITATION_DELETED_V1, (event -> Mono.just(
+                        SerializerUtils.deserializeFromJsonBytes(event.getData(), InvitationDeletedEvent.class)
+                ).flatMap(invitationDeletedEvent -> boardRepository.removeInvitedId(invitationDeletedEvent.getAggregateId(), invitationDeletedEvent.getUserId(), event.getId().toString())
+                        .then(boardRepository.removeJoinedId(invitationDeletedEvent.getAggregateId(), invitationDeletedEvent.getUserId(), event.getId().toString())))
                 )
         ), BoardAggregate.AGGREGATE_TYPE, ROUTING_KEYS);
 

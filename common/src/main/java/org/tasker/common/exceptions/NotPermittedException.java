@@ -6,4 +6,8 @@ public class NotPermittedException extends RuntimeException {
         super("Not permitted to perform this action.");
     }
 
+    public NotPermittedException(String message, Object... args) {
+        super(String.format(message, args));
+    }
+
 }

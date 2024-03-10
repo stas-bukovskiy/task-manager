@@ -4,14 +4,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.exceptions.NotPermittedException;
 import org.tasker.common.models.commands.CreateBoardCommand;
 import org.tasker.common.models.commands.InviteUsersCommand;
 import org.tasker.common.models.domain.BoardAggregate;
 import org.tasker.common.models.dto.BoardDto;
 import org.tasker.common.models.dto.BoardStatistic;
-import org.tasker.task.exception.BoardNotFoundException;
+import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.mapper.BoardMapper;
 import org.tasker.task.output.persistance.BoardRepository;
+import org.tasker.task.service.BoardAggService;
 import org.tasker.task.service.BoardService;
 import org.tasker.task.service.InvitationService;
 import reactor.core.publisher.Mono;
@@ -28,6 +30,7 @@ public class BoardServiceImpl implements BoardService {
     private final EventStoreDB eventStore;
     private final InvitationService invitationService;
     private final BoardRepository boardRepository;
+    private final BoardAggService boardAggService;
 
     @Override
     public Mono<BoardStatistic> getStatistic(String userAggregateId) {
@@ -65,7 +68,44 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public Mono<BoardDto> getBoard(String userId, String boardId) {
         return boardRepository.findBoardByUserId(userId, boardId)
-                .switchIfEmpty(Mono.error(new BoardNotFoundException()))
+                .switchIfEmpty(Mono.error(new ItemNotFoundException()))
                 .map(BoardMapper::fromDocToDto);
     }
+
+    @Override
+    public Mono<Void> deleteBoard(String boardId, String userId) {
+        return boardAggService.getBoardAgg(boardId, userId)
+                .flatMap(aggregate -> {
+                    if (!aggregate.getOwnerId().equals(userId)) {
+                        return Mono.error(new NotPermittedException());
+                    }
+                    aggregate.deleteBoard();
+                    return eventStore.save(aggregate);
+                });
+    }
+
+    @Override
+    public Mono<Void> deleteMember(String boardId, String userId, String memberId) {
+        return boardAggService.getBoardAgg(boardId, userId)
+                .flatMap(aggregate -> {
+                    if (!aggregate.getOwnerId().equals(userId)) {
+                        return Mono.error(new NotPermittedException());
+                    }
+                    aggregate.deleteMember(memberId);
+                    return eventStore.save(aggregate);
+                });
+    }
+
+    @Override
+    public Mono<Void> updateBoard(String boardId, String userId, String title) {
+        return boardAggService.getBoardAgg(boardId, userId)
+                .flatMap(aggregate -> {
+                    if (!aggregate.getOwnerId().equals(userId)) {
+                        return Mono.error(new NotPermittedException());
+                    }
+                    aggregate.updateBoard(title);
+                    return eventStore.save(aggregate);
+                });
+    }
+
 }

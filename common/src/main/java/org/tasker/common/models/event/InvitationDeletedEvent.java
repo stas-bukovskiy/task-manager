@@ -8,19 +8,17 @@ import org.tasker.common.es.BaseEvent;
 import org.tasker.common.models.domain.BoardAggregate;
 
 @Data
-@EqualsAndHashCode(callSuper = false)
-public class InvitationReviewedEvent extends BaseEvent {
+@EqualsAndHashCode(callSuper = true)
+public class InvitationDeletedEvent extends BaseEvent {
 
-    public static final String INVITATION_REVIEWED_V1 = "INVITATION_REVIEWED_V1";
+    public static final String INVITATION_DELETED_V1 = "INVITATION_DELETED_V1";
     public static final String AGGREGATE_TYPE = BoardAggregate.AGGREGATE_TYPE;
 
     private String userId;
-    private boolean accepted;
 
     @Builder
-    public InvitationReviewedEvent(@JsonProperty("aggregate_id") String aggregateId, String userId, boolean accepted) {
+    public InvitationDeletedEvent(@JsonProperty("aggregate_id") String aggregateId, String userId) {
         super(aggregateId);
         this.userId = userId;
-        this.accepted = accepted;
     }
 }

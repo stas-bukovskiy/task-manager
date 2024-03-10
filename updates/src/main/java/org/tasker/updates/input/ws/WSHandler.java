@@ -227,6 +227,71 @@ public class WSHandler implements WebSocketHandler {
                             return sendErrorResponse(session, wsRequest.correlationId(), ex);
                         });
             }
+            case "update_board" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), UpdateBoardRequest.class);
+                    validator.validate(request, "update_board_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.updateBoard(currentUserId, request);
+                });
+            }
+            case "invite_users" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), InviteUsersRequest.class);
+                    validator.validate(request, "invite_user_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return invitationService.inviteUser(currentUserId, request);
+                });
+            }
+            case "delete_invitation" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), DeleteInvitationRequest.class);
+                    validator.validate(request, "delete_invitation_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return invitationService.deleteInvitation(currentUserId, request);
+                });
+            }
+            case "delete_member" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), DeleteMemberRequest.class);
+                    validator.validate(request, "delete_member_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.deleteMember(currentUserId, request);
+                });
+            }
+            case "delete_board" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), DeleteBoardRequest.class);
+                    validator.validate(request, "delete_board_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.deleteBoard(currentUserId, request);
+                });
+            }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());
                 return Mono.empty();

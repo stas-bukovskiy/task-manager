@@ -15,4 +15,10 @@ public interface BoardService {
     Mono<List<BoardDto>> getBoards(String userId);
 
     Mono<BoardDto> getBoard(String userId, String boardId);
+
+    Mono<Void> deleteBoard(String boardId, String userId);
+
+    Mono<Void> deleteMember(String boardId, String userId, String memberId);
+
+    Mono<Void> updateBoard(String boardId, String userId, String title);
 }
