@@ -72,5 +72,108 @@
     "data": {
       "board_id": "board_id"
     }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_tasks",
+    "data": {
+      "board_id": "board_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_task",
+    "data": {
+      "board_id": "task_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "create_task",
+    "data": {
+      "board_id": "board_id",
+      "title": "New Task",
+      "description": "New Description",
+      "start_date": "2020-12-12",
+      "due_date": "2020-12-13",
+      "estimated_time": 3,
+      "priority": "LOW",
+      "status": "TODO",
+      "assignee_ids": []
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "update_task_info",
+    "data": {
+      "task_id": "task_id",
+      "title": "New Task",
+      "description": "New Description",
+      "start_date": "2020-12-12",
+      "due_date": "2020-12-13",
+      "estimated_time": 3,
+      "priority": "HIGH"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "update_task_status",
+    "data": {
+      "task_id": "task_id",
+      "status": "IN_PROGRESS"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "update_task_assignees",
+    "data": {
+      "task_id": "task_id",
+      "assignee_ids": []
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_task",
+    "data": {
+      "task_id": "task_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_tasks",
+    "data": {
+      "board_id": "board_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "update_task_status",
+    "data": {
+      "task_id": "task_id",
+      "status": "DONE"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "add_assignee",
+    "data": {
+      "task_id": "task_id",
+      "assignee_id": "assignee_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_assignee",
+    "data": {
+      "task_id": "task_id",
+      "assignee_id": "assignee_id"
+    }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "delete_task",
+    "data": {
+      "task_id": "task_id"
+    }
   }
 ]

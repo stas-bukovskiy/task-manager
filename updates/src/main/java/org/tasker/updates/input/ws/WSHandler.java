@@ -292,6 +292,128 @@ public class WSHandler implements WebSocketHandler {
                     return taskService.deleteBoard(currentUserId, request);
                 });
             }
+            case "get_tasks" -> {
+                return Mono.deferContextual(ctx -> {
+                            if (wsRequest.data() == null) {
+                                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                            }
+
+                            final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), GetTasksRequest.class);
+                            validator.validate(request, "get_tasks_request");
+
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getTasks(currentUserId, request);
+                        }).flatMap((response) -> {
+                            if (response.getHttpCode() != HttpStatus.OK.value()) {
+                                return Mono.error(new ResponseStatusException(HttpStatusCode.valueOf(response.getHttpCode()), response.getMessage()));
+                            }
+                            return sendResponse(session, wsRequest, response);
+                        })
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
+            }
+            case "get_task" -> {
+                return Mono.deferContextual(ctx -> {
+                            if (wsRequest.data() == null) {
+                                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                            }
+
+                            final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), GetTaskRequest.class);
+                            validator.validate(request, "get_task_request");
+
+                            final String currentUserId = ctx.get("aggregate_id");
+                            return taskService.getTask(currentUserId, request);
+                        }).flatMap((response) -> {
+                            if (response.getHttpCode() != HttpStatus.OK.value()) {
+                                return Mono.error(new ResponseStatusException(HttpStatusCode.valueOf(response.getHttpCode()), response.getMessage()));
+                            }
+                            return sendResponse(session, wsRequest, response);
+                        })
+                        .onErrorResume(ex -> {
+                            log.error("Error while updating user info", ex);
+                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                        });
+            }
+            case "create_task" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), CreateTaskRequest.class);
+                    validator.validate(request, "create_task_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.createTask(currentUserId, request);
+                });
+            }
+            case "update_task_info" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), UpdateTaskInfoRequest.class);
+                    validator.validate(request, "update_task_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.updateTask(currentUserId, request);
+                });
+            }
+            case "update_task_status" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), UpdateTaskStatusRequest.class);
+                    validator.validate(request, "update_task_status_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.updateTaskStatus(currentUserId, request);
+                });
+            }
+            case "add_assignee" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), AddAssigneeRequest.class);
+                    validator.validate(request, "add_assignee_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.addAssignee(currentUserId, request);
+                });
+            }
+            case "delete_assignee" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), DeleteAssigneeRequest.class);
+                    validator.validate(request, "delete_assignee_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.deleteAssignee(currentUserId, request);
+                });
+            }
+            case "delete_task" -> {
+                return Mono.deferContextual(ctx -> {
+                    if (wsRequest.data() == null) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data is required"));
+                    }
+
+                    final var request = SerializerUtils.deserializeFromJsonBytes(wsRequest.data(), DeleteTaskRequest.class);
+                    validator.validate(request, "delete_task_request");
+
+                    final String currentUserId = ctx.get("aggregate_id");
+                    return taskService.deleteTask(currentUserId, request);
+                });
+            }
             default -> {
                 log.error("Invalid request type: {}", wsRequest.type());
                 return Mono.empty();

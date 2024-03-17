@@ -7,9 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tasker.common.models.commands.*;
-import org.tasker.common.models.queries.GetBoardQuery;
-import org.tasker.common.models.queries.GetBoardsQuery;
-import org.tasker.common.models.queries.GetStatisticQuery;
+import org.tasker.common.models.queries.*;
 import reactor.core.publisher.Flux;
 import reactor.rabbitmq.*;
 
@@ -48,7 +46,11 @@ public final class TaskMessagingSpecs {
                                 ReviewInvitationCommand.COMMAND_NAME, GetBoardQuery.QUERY_NAME, GetBoardsQuery.QUERY_NAME,
                                 DeleteBoardCommand.COMMAND_NAME, DeleteInvitationCommand.COMMAND_NAME,
                                 DeleteMemberCommand.COMMAND_NAME, UpdateBoardCommand.COMMAND_NAME,
-                                InviteUsersCommand.COMMAND_NAME)
+                                InviteUsersCommand.COMMAND_NAME, AddAssigneeCommand.COMMAND_NAME,
+                                GetTasksQuery.QUERY_NAME, GetTaskQuery.QUERY_NAME,
+                                CreateTaskCommand.COMMAND_NAME, DeleteAssigneeCommand.COMMAND_NAME,
+                                DeleteTaskCommand.COMMAND_NAME, UpdateTaskInfoCommand.COMMAND_NAME,
+                                UpdateTaskStatusCommand.COMMAND_NAME)
                         .map(this::requestBindingSpecs)
                         .flatMap(sender::bind))
                 .doOnError(ex -> log.error("Error while initializing command queue: {}", ex.getMessage()))

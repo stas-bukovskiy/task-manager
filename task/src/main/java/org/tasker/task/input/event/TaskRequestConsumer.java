@@ -7,13 +7,14 @@ import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.tasker.common.es.SerializerUtils;
+import org.tasker.common.exceptions.NotPermittedException;
 import org.tasker.common.models.commands.*;
 import org.tasker.common.models.dto.Statistic;
-import org.tasker.common.models.queries.GetBoardQuery;
-import org.tasker.common.models.queries.GetBoardsQuery;
-import org.tasker.common.models.queries.GetStatisticQuery;
+import org.tasker.common.models.queries.*;
 import org.tasker.common.models.response.GetBoardsResponse;
 import org.tasker.common.models.response.GetStatisticResponse;
+import org.tasker.common.models.response.GetTaskResponse;
+import org.tasker.common.models.response.GetTasksResponse;
 import org.tasker.task.exception.ExpectedException;
 import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.service.BoardService;
@@ -70,6 +71,22 @@ public class TaskRequestConsumer {
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), UpdateBoardCommand.class));
                         case InviteUsersCommand.COMMAND_NAME ->
                                 handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), InviteUsersCommand.class));
+                        case GetTasksQuery.QUERY_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetTasksQuery.class), delivery.getProperties().getReplyTo());
+                        case GetTaskQuery.QUERY_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), GetTaskQuery.class), delivery.getProperties().getReplyTo());
+                        case DeleteAssigneeCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), DeleteAssigneeCommand.class));
+                        case AddAssigneeCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), AddAssigneeCommand.class));
+                        case DeleteTaskCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), DeleteTaskCommand.class));
+                        case CreateTaskCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), CreateTaskCommand.class));
+                        case UpdateTaskInfoCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), UpdateTaskInfoCommand.class));
+                        case UpdateTaskStatusCommand.COMMAND_NAME ->
+                                handle(SerializerUtils.deserializeFromJsonBytes(delivery.getBody(), UpdateTaskStatusCommand.class));
                         default -> log.error("Unknown command: {}", commandName);
                     }
                 });
@@ -199,6 +216,115 @@ public class TaskRequestConsumer {
         boardService.deleteBoard(command.boardId(), command.userId())
                 .doOnError(ex -> onError("Failed to delete board: {}", ex, command))
                 .doOnSuccess(v -> log.info("Deleted board <{}> for user <{}>", command.boardId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(GetTasksQuery query, String routingKey) {
+        taskService.getTasks(query.userId(), query.boardId())
+                .map(tasks -> GetTasksResponse.builder()
+                        .httpCode(HttpStatus.OK.value())
+                        .data(tasks)
+                        .build())
+                .onErrorResume(ex -> {
+                            if (ex instanceof ItemNotFoundException) {
+                                return Mono.just(GetTasksResponse.builder()
+                                        .httpCode(HttpStatus.NOT_FOUND.value())
+                                        .message(ex.getMessage())
+                                        .build());
+                            } else if (ex instanceof NotPermittedException) {
+                                return Mono.just(GetTasksResponse.builder()
+                                        .httpCode(HttpStatus.UNAUTHORIZED.value())
+                                        .message(ex.getMessage())
+                                        .build());
+                            }
+
+                            log.error("Error while handling query", ex);
+                            return Mono.just(GetTasksResponse.builder()
+                                    .httpCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .message("Internal server error")
+                                    .build());
+                        }
+                )
+                .subscribe(response -> {
+                    log.info("Sending response on {}: {}", routingKey, response);
+
+                    OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
+                    sender.send(Mono.just(message)).subscribe();
+                });
+    }
+
+    private void handle(GetTaskQuery query, String routingKey) {
+        taskService.getTask(query.userId(), query.taskId())
+                .map(tasks -> GetTaskResponse.builder()
+                        .httpCode(HttpStatus.OK.value())
+                        .data(tasks)
+                        .build())
+                .onErrorResume(ex -> {
+                            if (ex instanceof ItemNotFoundException) {
+                                return Mono.just(GetTaskResponse.builder()
+                                        .httpCode(HttpStatus.NOT_FOUND.value())
+                                        .message(ex.getMessage())
+                                        .build());
+                            } else if (ex instanceof NotPermittedException) {
+                                return Mono.just(GetTaskResponse.builder()
+                                        .httpCode(HttpStatus.UNAUTHORIZED.value())
+                                        .message(ex.getMessage())
+                                        .build());
+                            }
+                            log.error("Error while handling query", ex);
+                            return Mono.just(GetTaskResponse.builder()
+                                    .httpCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .message("Internal server error")
+                                    .build());
+                        }
+                )
+                .subscribe(response -> {
+                    log.info("Sending response on {}: {}", routingKey, response);
+
+                    OutboundMessage message = new OutboundMessage(taskMessagingSpecs.getResponseExchangeName(), routingKey, SerializerUtils.serializeToJsonBytes(response));
+                    sender.send(Mono.just(message)).subscribe();
+                });
+    }
+
+    private void handle(DeleteAssigneeCommand command) {
+        taskService.deleteAssignee(command)
+                .doOnError(ex -> onError("Failed to delete assignee: {}", ex, command))
+                .doOnSuccess(v -> log.info("Deleted assignee <{}> from task <{}> for user <{}>", command.assigneeId(), command.taskId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(AddAssigneeCommand command) {
+        taskService.addAssignee(command)
+                .doOnError(ex -> onError("Failed to add assignee: {}", ex, command))
+                .doOnSuccess(v -> log.info("Added assignee <{}> to task <{}> for user <{}>", command.assigneeId(), command.taskId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(DeleteTaskCommand command) {
+        taskService.deleteTask(command)
+                .doOnError(ex -> onError("Failed to delete task: {}", ex, command))
+                .doOnSuccess(v -> log.info("Deleted task <{}> for user <{}>", command.taskId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(CreateTaskCommand command) {
+        taskService.createTask(command)
+                .doOnError(ex -> onError("Failed to create task: {}", ex, command))
+                .doOnSuccess(v -> log.info("Created new task '{}' for user <{}>", command.title(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(UpdateTaskInfoCommand command) {
+        taskService.updateTaskInfo(command)
+                .doOnError(ex -> onError("Failed to update task info: {}", ex, command))
+                .doOnSuccess(v -> log.info("Updated task <{}> for user <{}>", command.taskId(), command.userId()))
+                .subscribe();
+    }
+
+    private void handle(UpdateTaskStatusCommand command) {
+        taskService.updateTaskStatus(command)
+                .doOnError(ex -> onError("Failed to update task status: {}", ex, command))
+                .doOnSuccess(v -> log.info("Updated task <{}> status for user <{}>", command.taskId(), command.userId()))
                 .subscribe();
     }
 

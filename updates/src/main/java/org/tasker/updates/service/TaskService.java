@@ -1,12 +1,7 @@
 package org.tasker.updates.service;
 
-import org.tasker.common.models.response.GetBoardResponse;
-import org.tasker.common.models.response.GetBoardsResponse;
-import org.tasker.common.models.response.GetStatisticResponse;
-import org.tasker.updates.models.request.CreateBoardRequest;
-import org.tasker.updates.models.request.DeleteBoardRequest;
-import org.tasker.updates.models.request.DeleteMemberRequest;
-import org.tasker.updates.models.request.UpdateBoardRequest;
+import org.tasker.common.models.response.*;
+import org.tasker.updates.models.request.*;
 import reactor.core.publisher.Mono;
 
 public interface TaskService {
@@ -23,4 +18,20 @@ public interface TaskService {
     Mono<Void> deleteMember(String currentUserId, DeleteMemberRequest request);
 
     Mono<Void> deleteBoard(String currentUserId, DeleteBoardRequest request);
+
+    Mono<GetTasksResponse> getTasks(String currentUserId, GetTasksRequest request);
+
+    Mono<GetTaskResponse> getTask(String currentUserId, GetTaskRequest request);
+
+    Mono<Void> createTask(String currentUserId, CreateTaskRequest request);
+
+    Mono<Void> updateTask(String currentUserId, UpdateTaskInfoRequest request);
+
+    Mono<Void> updateTaskStatus(String currentUserId, UpdateTaskStatusRequest request);
+
+    Mono<Void> addAssignee(String currentUserId, AddAssigneeRequest request);
+
+    Mono<Void> deleteAssignee(String currentUserId, DeleteAssigneeRequest request);
+
+    Mono<Void> deleteTask(String currentUserId, DeleteTaskRequest request);
 }
