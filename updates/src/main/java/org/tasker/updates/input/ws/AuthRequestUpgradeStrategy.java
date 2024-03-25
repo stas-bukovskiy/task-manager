@@ -79,6 +79,7 @@ public class AuthRequestUpgradeStrategy implements RequestUpgradeStrategy {
 
                     return reactorResponse.sendWebsocket((in, out) -> {
                         ReactorNettyWebSocketSession session = new ReactorNettyWebSocketSession(in, out, handshakeInfo, bufferFactory, this.maxFramePayloadLength);
+                        session.getAttributes().put("aggregate_id", authRes.getData());
                         return handler.handle(session)
                                 .contextWrite(ctx -> ctx.put("aggregate_id", authRes.getData()));
                     });

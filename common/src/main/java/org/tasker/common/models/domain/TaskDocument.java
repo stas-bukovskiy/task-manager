@@ -1,4 +1,4 @@
-package org.tasker.task.model.domain;
+package org.tasker.common.models.domain;
 
 import lombok.Builder;
 import lombok.Data;

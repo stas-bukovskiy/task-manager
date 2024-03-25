@@ -47,6 +47,14 @@ public final class SerializerUtils {
         }
     }
 
+    public static <T> T deserializeFromJsonBytes(final byte[] bytes, TypeReference<T> typeReference) {
+        try {
+            return objectMapper.readValue(bytes, typeReference);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize bytes", e);
+        }
+    }
+
     public static Event[] deserializeEventsFromJsonBytes(final byte[] jsonBytes) {
         try {
             return objectMapper.readValue(jsonBytes, Event[].class);

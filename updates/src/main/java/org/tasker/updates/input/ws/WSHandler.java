@@ -19,6 +19,7 @@ import org.tasker.updates.models.response.WSResponse;
 import org.tasker.updates.service.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,36 +36,43 @@ public class WSHandler implements WebSocketHandler {
     private final WSRequestDeserializeService wsRequestDeserializeService;
     private final TaskService taskService;
     private final InvitationService invitationService;
+    private final UserStatusService userStatusService;
     private final ConcurrentMap<String, Set<WebSocketSession>> activeSessions;
 
-    public WSHandler(UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService,
-                     @Qualifier("updatesTaskService") TaskService taskService, UpdateHandler updateHandler,
-                     @Qualifier("updatesInvitationService") InvitationService invitationService) {
+    public WSHandler(UpdateHandler updateHandler, UserService userService, ValidationService validator, WSRequestDeserializeService wsRequestDeserializeService,
+                     @Qualifier("updatesTaskService") TaskService taskService,
+                     @Qualifier("updatesInvitationService") InvitationService invitationService,
+                     @Qualifier("updatesUserStatusService") UserStatusService userStatusService) {
+        this.updateHandler = updateHandler;
         this.userService = userService;
         this.validator = validator;
         this.wsRequestDeserializeService = wsRequestDeserializeService;
         this.taskService = taskService;
-        this.updateHandler = updateHandler;
         this.invitationService = invitationService;
+        this.userStatusService = userStatusService;
 
         activeSessions = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
     public void init() {
-        updateHandler.subscribeToQueue()
-                .doOnError(ex -> log.error("Error while subscribing to notification queues", ex))
+        updateHandler.subscribeToNotifications()
+                .doOnError(ex -> log.error("Error while subscribing to update queue", ex))
                 .subscribe(notification -> {
-                    log.info("Notification sent: {}", notification);
-                    activeSessions.getOrDefault(notification.toUserId(), Set.of()).forEach(session -> {
-                        if (session.isOpen()) {
-                            session.send(Mono.just(session.textMessage(SerializerUtils.serializeToJsonString(
-                                    notification
-                            )))).subscribe();
-                        } else {
-                            activeSessions.get(notification.toUserId()).remove(session);
-                            log.info("Session {} is closed for user {}", session.getId(), notification.toUserId());
-                        }
+                    notification.toUserIds().forEach(userId -> {
+                        activeSessions.getOrDefault(userId, Set.of()).forEach(session -> {
+                            if (session.isOpen()) {
+                                session.send(Mono.just(session.textMessage(SerializerUtils.serializeToJsonString(
+                                        notification
+                                )))).subscribe();
+                            } else {
+                                activeSessions.get(userId).remove(session);
+                                userStatusService.updateUserStatus(userId, false)
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribe();
+                                log.info("Session {} is closed for user {}", session.getId(), userId);
+                            }
+                        });
                     });
                 });
     }
@@ -72,42 +80,52 @@ public class WSHandler implements WebSocketHandler {
     @Override
     // TODO: add timeout
     public Mono<Void> handle(WebSocketSession session) {
+        final String userId = (String) session.getAttributes().get("aggregate_id");
         return Flux.merge(
-                Flux.deferContextual(ctx -> {
-                    final String currentUserId = ctx.get("aggregate_id");
-                    activeSessions.putIfAbsent(currentUserId, ConcurrentHashMap.newKeySet());
-                    activeSessions.get(currentUserId).add(session);
-                    return Mono.just(currentUserId);
-                }).doOnNext(currentUserId -> log.info("New session: {}, for user {}", session.getId(), currentUserId)),
-                session.receive()
-                        .<WSRequest>handle((requestRaw, sink) -> {
-                            var payload = requestRaw.getPayload();
-                            var payloadBytes = new byte[payload.readableByteCount()];
-                            payload.read(payloadBytes);
+                        Flux.deferContextual(ctx -> {
+                                    final String currentUserId = ctx.get("aggregate_id");
+                                    activeSessions.putIfAbsent(currentUserId, ConcurrentHashMap.newKeySet());
+                                    activeSessions.get(currentUserId).add(session);
+                                    return Mono.just(currentUserId);
+                                }).flatMap(currentUserId -> userStatusService.updateUserStatus(currentUserId, true)
+                                        .then(Mono.just(currentUserId)))
+                                .doOnNext(currentUserId -> log.info("New session: {}, for user {}", session.getId(), currentUserId)),
+                        session.receive()
+                                .<WSRequest>handle((requestRaw, sink) -> {
+                                    var payload = requestRaw.getPayload();
+                                    var payloadBytes = new byte[payload.readableByteCount()];
+                                    payload.read(payloadBytes);
 
-                            try {
-                                sink.next(wsRequestDeserializeService.deserialize(payloadBytes));
-                            } catch (Exception ex) {
-                                sink.error(ex);
-                            }
-                        })
-                        .flatMap(wsRequest -> delegateRequest(session, wsRequest)
+                                    try {
+                                        sink.next(wsRequestDeserializeService.deserialize(payloadBytes));
+                                    } catch (Exception ex) {
+                                        sink.error(ex);
+                                    }
+                                })
+                                .flatMap(wsRequest -> delegateRequest(session, wsRequest)
+                                        .onErrorResume(ex -> {
+                                            log.info("Error while handling WS request: {}", wsRequest, ex);
+                                            return sendErrorResponse(session, wsRequest.correlationId(), ex);
+                                        }))
                                 .onErrorResume(ex -> {
-                                    log.info("Error while handling WS request: {}", wsRequest, ex);
-                                    return sendErrorResponse(session, wsRequest.correlationId(), ex);
-                                }))
-                        .onErrorResume(ex -> {
-                            if (ex instanceof ResponseStatusException responseStatusException) {
-                                if (responseStatusException.getStatusCode().is4xxClientError()) {
-                                    log.info("Error while handling WS request: {}", responseStatusException.getReason());
-                                } else {
-                                    log.error("Error while handling WS request", ex);
-                                }
-                            }
-                            return Mono.empty();
-                        })
-                        .thenMany(Flux.empty())
-        ).then();
+                                    if (ex instanceof ResponseStatusException responseStatusException) {
+                                        if (responseStatusException.getStatusCode().is4xxClientError()) {
+                                            log.info("Error while handling WS request: {}", responseStatusException.getReason());
+                                        } else {
+                                            log.error("Error while handling WS request", ex);
+                                        }
+                                    }
+                                    return Mono.empty();
+                                })
+                                .thenMany(Flux.empty())
+                ).doFinally(ignored -> {
+                    activeSessions.getOrDefault(userId, Set.of()).remove(session);
+                    userStatusService.updateUserStatus(userId, false)
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .subscribe();
+                    log.info("Session {} is closed for user {}", session.getId(), userId);
+                })
+                .then();
     }
 
     private Mono<Void> delegateRequest(WebSocketSession session, WSRequest wsRequest) {

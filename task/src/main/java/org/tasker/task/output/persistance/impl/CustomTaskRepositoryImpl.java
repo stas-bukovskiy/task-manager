@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
-import org.tasker.task.model.domain.TaskDocument;
+import org.tasker.common.models.domain.TaskDocument;
 import org.tasker.task.output.persistance.CustomTaskRepository;
 import reactor.core.publisher.Mono;
 

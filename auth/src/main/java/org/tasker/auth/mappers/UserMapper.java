@@ -1,8 +1,8 @@
 package org.tasker.auth.mappers;
 
-import org.tasker.auth.models.domain.UserDocument;
 import org.tasker.common.es.Event;
 import org.tasker.common.models.domain.UserAggregate;
+import org.tasker.common.models.domain.UserDocument;
 import org.tasker.common.models.dto.UserDto;
 
 import java.util.stream.Collectors;

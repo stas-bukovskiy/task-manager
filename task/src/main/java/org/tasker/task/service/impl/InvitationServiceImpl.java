@@ -4,11 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.exception.ItemNotFoundException;
 import org.tasker.common.models.commands.DeleteInvitationCommand;
 import org.tasker.common.models.commands.InviteUsersCommand;
 import org.tasker.common.models.commands.ReviewInvitationCommand;
 import org.tasker.common.models.domain.UserAggregate;
-import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.service.BoardAggService;
 import org.tasker.task.service.InvitationService;
 import reactor.core.publisher.Flux;
@@ -28,7 +28,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public Mono<Void> inviteUsersToBoard(InviteUsersCommand command) {
         return boardService.getBoardAgg(command.boardId(), command.fromUserId())
-                .zipWith(eventStore.exists(command.fromUserId(), UserAggregate.AGGREGATE_TYPE)
+                .zipWhen(board -> eventStore.exists(command.fromUserId(), UserAggregate.AGGREGATE_TYPE)
                         .handle((exists, sink) -> {
                             if (!exists) {
                                 sink.error(new ItemNotFoundException("User not found for id: " + command.fromUserId()));
@@ -37,6 +37,7 @@ public class InvitationServiceImpl implements InvitationService {
                             }
                         })
                         .flatMapMany(ignored2 -> Flux.fromIterable(command.toUserIds())
+                                .filter(userId -> !board.getInvitedIds().contains(userId) && !board.getJoinedIds().contains(userId))
                                 .publishOn(Schedulers.boundedElastic())
                                 .map(userId -> {
                                     var isExist = eventStore.exists(userId, UserAggregate.AGGREGATE_TYPE).block();
@@ -88,6 +89,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public Mono<Void> deleteInvitation(DeleteInvitationCommand command) {
         return boardService.getBoardAgg(command.boardId(), command.ownerId())
+                .filter(board -> board.getInvitedIds().contains(command.userId()))
                 .map(board -> {
                     board.deleteIntimation(command.userId());
                     return board;

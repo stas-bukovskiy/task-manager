@@ -1,6 +1,6 @@
 package org.tasker.task.output.persistance;
 
-import org.tasker.task.model.domain.BoardDocument;
+import org.tasker.common.models.domain.BoardDocument;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

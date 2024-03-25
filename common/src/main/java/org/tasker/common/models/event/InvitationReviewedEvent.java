@@ -14,6 +14,7 @@ public class InvitationReviewedEvent extends BaseEvent {
     public static final String INVITATION_REVIEWED_V1 = "INVITATION_REVIEWED_V1";
     public static final String AGGREGATE_TYPE = BoardAggregate.AGGREGATE_TYPE;
 
+    @JsonProperty("user_id")
     private String userId;
     private boolean accepted;
 

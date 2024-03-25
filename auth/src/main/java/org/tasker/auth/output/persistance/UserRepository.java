@@ -2,7 +2,7 @@ package org.tasker.auth.output.persistance;
 
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import org.tasker.auth.models.domain.UserDocument;
+import org.tasker.common.models.domain.UserDocument;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

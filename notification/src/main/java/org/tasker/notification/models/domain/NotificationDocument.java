@@ -1,4 +1,4 @@
-package org.tasker.task.model.domain;
+package org.tasker.notification.models.domain;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,12 +8,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import java.util.Set;
+import java.util.Date;
 
 @Data
 @Builder
-@Document(collection = "boards")
-public class BoardDocument {
+@Document(collection = "notifications")
+public class NotificationDocument {
 
     @MongoId(FieldType.OBJECT_ID)
     private String id;
@@ -22,19 +22,24 @@ public class BoardDocument {
     @Field("aggregate_id")
     private String aggregateId;
 
-    private String title;
+    @Field("user_id")
+    private String userId;
 
-    @Indexed
-    @Field("owner_id")
-    private String ownerId;
+    private String message;
 
-    @Field("invited_ids")
-    private Set<String> invitedIds;
+    @Field("for_aggregate_type")
+    private String forAggregateType;
 
-    @Field("joined_ids")
-    private Set<String> joinedIds;
+    @Field("for_aggregate_id")
+    private String forAggregateId;
 
-    @Field("processed_events")
-    private Set<String> processedEvents;
+    @Field("valid")
+    private boolean valid;
+
+    @Field("deleted")
+    private boolean deleted;
+
+    @Field("created_at")
+    private Date createdAt;
 
 }

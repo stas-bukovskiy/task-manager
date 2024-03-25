@@ -4,15 +4,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.exception.ItemNotFoundException;
 import org.tasker.common.exceptions.NotPermittedException;
 import org.tasker.common.models.commands.*;
 import org.tasker.common.models.domain.TaskAggregate;
+import org.tasker.common.models.domain.TaskDocument;
 import org.tasker.common.models.domain.UserAggregate;
 import org.tasker.common.models.dto.TaskDto;
 import org.tasker.common.models.dto.TaskStatistic;
-import org.tasker.task.exception.ItemNotFoundException;
+import org.tasker.common.models.enums.TaskStatus;
 import org.tasker.task.mapper.TaskMapper;
-import org.tasker.task.model.domain.TaskDocument;
 import org.tasker.task.output.persistance.TaskRepository;
 import org.tasker.task.service.BoardAggService;
 import org.tasker.task.service.TaskService;
@@ -70,8 +71,10 @@ public class TaskServiceImpl implements TaskService {
                 }).map(ignored -> {
                     final var aggregateId = UUID.randomUUID().toString();
                     var task = new TaskAggregate(aggregateId);
-                    task.createTask(command.boardId(), command.title(), command.description(), command.startDate(), command.dueDate(), command.estimatedTime(), command.priority());
-                    task.updateStatus(command.status());
+                    task.createTask(command.boardId(), command.title(), command.description(), command.startDate(), command.dueDate(), command.estimatedTime(), command.priority(), command.userId());
+                    if (command.status() != TaskStatus.TODO) {
+                        task.updateStatus(command.status());
+                    }
                     return task;
                 }).flatMap(task -> addAssigneeEvents(task, new HashSet<>(command.assigneeIds())))
                 .flatMap(eventStore::save);
@@ -101,7 +104,9 @@ public class TaskServiceImpl implements TaskService {
     public Mono<Void> deleteAssignee(DeleteAssigneeCommand command) {
         return getTaskAgg(command.taskId(), command.userId(), "delete assignee")
                 .map(task -> {
-                    task.deleteAssignee(command.assigneeId());
+                    if (task.getAssigneeIds().contains(command.assigneeId())) {
+                        task.deleteAssignee(command.assigneeId());
+                    }
                     return task;
                 })
                 .flatMap(eventStore::save);
@@ -134,6 +139,7 @@ public class TaskServiceImpl implements TaskService {
     private Mono<TaskAggregate> addAssigneeEvents(TaskAggregate task, Set<String> assignedIds) {
         return Flux.fromIterable(assignedIds)
                 .publishOn(Schedulers.boundedElastic())
+                .filter(assigneeId -> !task.getAssigneeIds().contains(assigneeId))
                 .filter(assigneeId -> {
                     final var isExist = eventStore.exists(assigneeId, UserAggregate.AGGREGATE_TYPE).block();
                     if (isExist == Boolean.FALSE) {
@@ -159,7 +165,9 @@ public class TaskServiceImpl implements TaskService {
         return taskRepository.findByAggregateId(taskId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Task %s not found", taskId)))
                 .flatMap(task -> {
-                    if (task.getBoard().getOwnerId().equals(userId) || task.getBoard().getJoinedIds().contains(userId)) {
+                    if (task.getBoard() != null
+                            && (task.getBoard().getOwnerId().equals(userId)
+                            || (task.getBoard().getJoinedIds() != null && task.getBoard().getJoinedIds().contains(userId)))) {
                         return Mono.just(task);
                     } else {
                         return Mono.error(new NotPermittedException("User %s is not permitted to %s task %s", userId, actionName, taskId));

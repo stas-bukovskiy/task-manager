@@ -4,18 +4,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.exception.ItemNotFoundException;
 import org.tasker.common.exceptions.NotPermittedException;
 import org.tasker.common.models.commands.CreateBoardCommand;
+import org.tasker.common.models.commands.DeleteTaskCommand;
 import org.tasker.common.models.commands.InviteUsersCommand;
 import org.tasker.common.models.domain.BoardAggregate;
 import org.tasker.common.models.dto.BoardDto;
 import org.tasker.common.models.dto.BoardStatistic;
-import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.mapper.BoardMapper;
 import org.tasker.task.output.persistance.BoardRepository;
 import org.tasker.task.service.BoardAggService;
 import org.tasker.task.service.BoardService;
 import org.tasker.task.service.InvitationService;
+import org.tasker.task.service.TaskService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,6 +34,7 @@ public class BoardServiceImpl implements BoardService {
     private final InvitationService invitationService;
     private final BoardRepository boardRepository;
     private final BoardAggService boardAggService;
+    private final TaskService taskService;
 
     @Override
     public Mono<BoardStatistic> getStatistic(String userAggregateId) {
@@ -74,7 +78,13 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public Mono<Void> deleteBoard(String boardId, String userId) {
-        return boardAggService.getBoardAgg(boardId, userId)
+        return taskService.getTasks(userId, boardId)
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(task -> taskService.deleteTask(DeleteTaskCommand.builder()
+                        .taskId(task.aggregateId())
+                        .userId(userId)
+                        .build()))
+                .then(boardAggService.getBoardAgg(boardId, userId))
                 .flatMap(aggregate -> {
                     if (!aggregate.getOwnerId().equals(userId)) {
                         return Mono.error(new NotPermittedException());
@@ -91,7 +101,9 @@ public class BoardServiceImpl implements BoardService {
                     if (!aggregate.getOwnerId().equals(userId)) {
                         return Mono.error(new NotPermittedException());
                     }
-                    aggregate.deleteMember(memberId);
+                    if (aggregate.getJoinedIds().contains(memberId)) {
+                        aggregate.deleteMember(memberId);
+                    }
                     return eventStore.save(aggregate);
                 });
     }

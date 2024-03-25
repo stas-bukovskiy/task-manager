@@ -1,6 +1,6 @@
 package org.tasker.auth.service;
 
-import org.tasker.auth.models.domain.UserDocument;
+import org.tasker.common.models.domain.UserDocument;
 import org.tasker.common.models.dto.LoginData;
 import org.tasker.common.models.queries.GetUserQuery;
 import org.tasker.common.models.queries.LoginUserQuery;

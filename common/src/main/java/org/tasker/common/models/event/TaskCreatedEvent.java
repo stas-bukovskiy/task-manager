@@ -31,9 +31,11 @@ public class TaskCreatedEvent extends BaseEvent {
     @JsonProperty("estimated_time")
     private int estimatedTime;
     private TaskPriority priority;
+    @JsonProperty("created_by")
+    private String createdBy;
 
     @Builder
-    public TaskCreatedEvent(@JsonProperty("aggregate_id") String aggregateId, String boardId, String title, String description, Date startDate, Date dueDate, int estimatedTime, TaskPriority priority) {
+    public TaskCreatedEvent(@JsonProperty("aggregate_id") String aggregateId, String boardId, String title, String description, Date startDate, Date dueDate, int estimatedTime, TaskPriority priority, String createdBy) {
         super(aggregateId);
         this.boardId = boardId;
         this.title = title;
@@ -42,6 +44,7 @@ public class TaskCreatedEvent extends BaseEvent {
         this.dueDate = dueDate;
         this.estimatedTime = estimatedTime;
         this.priority = priority;
+        this.createdBy = createdBy;
     }
 }
 

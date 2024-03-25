@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
-import org.tasker.task.model.domain.BoardDocument;
+import org.tasker.common.models.domain.BoardDocument;
 import org.tasker.task.output.persistance.CustomBoardRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

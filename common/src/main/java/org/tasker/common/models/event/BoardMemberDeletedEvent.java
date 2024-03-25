@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.tasker.common.es.BaseEvent;
+import org.tasker.common.models.domain.BoardAggregate;
 
 
 @Data
@@ -12,6 +13,7 @@ import org.tasker.common.es.BaseEvent;
 public class BoardMemberDeletedEvent extends BaseEvent {
 
     public static final String BOARD_MEMBER_DELETED_V1 = "BOARD_MEMBER_DELETED_V1";
+    public static final String AGGREGATE_TYPE = BoardAggregate.AGGREGATE_TYPE;
 
     private String memberId;
 

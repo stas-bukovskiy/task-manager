@@ -1,4 +1,4 @@
-package org.tasker.task.exception;
+package org.tasker.common.exception;
 
 public class ExpectedException extends RuntimeException {
     public ExpectedException(String message, Object... args) {

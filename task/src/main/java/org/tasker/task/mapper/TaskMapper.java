@@ -1,8 +1,8 @@
 package org.tasker.task.mapper;
 
 import org.tasker.common.models.domain.TaskAggregate;
+import org.tasker.common.models.domain.TaskDocument;
 import org.tasker.common.models.dto.TaskDto;
-import org.tasker.task.model.domain.TaskDocument;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

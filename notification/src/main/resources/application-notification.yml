@@ -1,0 +1,8 @@
+communication:
+  notification:
+    request-queue: notification-request-queue
+    request-exchange: notification-request-exchange
+    response-exchange: notification-response-exchange
+    updates-queue: notification-updates-queue
+    updates-exchange: notification-updates-exchange
+    events-queue: notification-events-queue

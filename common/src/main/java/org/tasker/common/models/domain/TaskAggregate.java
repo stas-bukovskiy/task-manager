@@ -84,7 +84,7 @@ public class TaskAggregate extends AggregateRoot {
         this.priority = taskInfoUpdatedEvent.getPriority();
     }
 
-    public void createTask(String boardId, String title, String description, Date startDate, Date dueDate, int estimatedTime, TaskPriority priority) {
+    public void createTask(String boardId, String title, String description, Date startDate, Date dueDate, int estimatedTime, TaskPriority priority, String createdBy) {
         final var data = TaskCreatedEvent.builder()
                 .aggregateId(id)
                 .boardId(boardId)
@@ -94,6 +94,7 @@ public class TaskAggregate extends AggregateRoot {
                 .dueDate(dueDate)
                 .estimatedTime(estimatedTime)
                 .priority(priority)
+                .createdBy(createdBy)
                 .build();
 
         final byte[] dataBytes = SerializerUtils.serializeToJsonBytes(data);
@@ -161,6 +162,7 @@ public class TaskAggregate extends AggregateRoot {
     public void deleteTask() {
         final var data = TaskDeletedEvent.builder()
                 .aggregateId(id)
+                .boardId(boardId)
                 .build();
 
         final byte[] dataBytes = SerializerUtils.serializeToJsonBytes(data);

@@ -69,7 +69,7 @@ public class BoardAggregate extends AggregateRoot {
     }
 
     private void handle(BoardMemberDeletedEvent event) {
-        this.invitedIds.remove(event.getMemberId());
+        this.joinedIds.remove(event.getMemberId());
     }
 
     private void handle(BoardCreatedEvent event) {
@@ -96,8 +96,13 @@ public class BoardAggregate extends AggregateRoot {
     }
 
     public void deleteBoard() {
+        var userIds = new HashSet<>(this.joinedIds);
+        userIds.add(this.ownerId);
+        userIds.addAll(this.invitedIds);
+
         final var data = BoardDeletedEvent.builder()
                 .aggregateId(id)
+                .toUserIds(userIds)
                 .build();
 
         final byte[] dataBytes = SerializerUtils.serializeToJsonBytes(data);

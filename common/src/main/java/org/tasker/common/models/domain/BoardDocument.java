@@ -1,4 +1,4 @@
-package org.tasker.auth.models.domain;
+package org.tasker.common.models.domain;
 
 import lombok.Builder;
 import lombok.Data;
@@ -12,29 +12,29 @@ import java.util.Set;
 
 @Data
 @Builder
-@Document(collection = "users")
-public class UserDocument {
+@Document(collection = "boards")
+public class BoardDocument {
 
     @MongoId(FieldType.OBJECT_ID)
     private String id;
 
-    @Field("processed_events")
-    Set<String> processedEvents;
-
-    @Indexed
-    private String username;
-
-    @Indexed
-    private String email;
-
-    private String password;
-
-    @Field("first_name")
-    private String firstName;
-
-    @Field("last_name")
-    private String lastName;
+    @Indexed(unique = true)
     @Field("aggregate_id")
     private String aggregateId;
+
+    private String title;
+
+    @Indexed
+    @Field("owner_id")
+    private String ownerId;
+
+    @Field("invited_ids")
+    private Set<String> invitedIds;
+
+    @Field("joined_ids")
+    private Set<String> joinedIds;
+
+    @Field("processed_events")
+    private Set<String> processedEvents;
 
 }

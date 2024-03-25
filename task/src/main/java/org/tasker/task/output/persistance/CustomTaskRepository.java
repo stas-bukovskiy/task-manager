@@ -1,6 +1,6 @@
 package org.tasker.task.output.persistance;
 
-import org.tasker.task.model.domain.TaskDocument;
+import org.tasker.common.models.domain.TaskDocument;
 import reactor.core.publisher.Mono;
 
 public interface CustomTaskRepository {

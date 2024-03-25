@@ -11,7 +11,7 @@ public interface TaskService {
 
     Mono<GetBoardsResponse> getBoards(String currentUserId);
 
-    Mono<GetBoardResponse> getBoard(String currentUserId, String s);
+    Mono<GetBoardResponse> getBoard(String currentUserId, String boardId);
 
     Mono<Void> updateBoard(String currentUserId, UpdateBoardRequest request);
 

@@ -1,4 +1,4 @@
-package org.tasker.task.exception;
+package org.tasker.common.exception;
 
 public class ItemNotFoundException extends ExpectedException {
     public ItemNotFoundException() {

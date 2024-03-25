@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tasker.common.es.EventStoreDB;
+import org.tasker.common.exception.ItemNotFoundException;
 import org.tasker.common.exceptions.NotPermittedException;
 import org.tasker.common.models.domain.BoardAggregate;
-import org.tasker.task.exception.ItemNotFoundException;
 import org.tasker.task.service.BoardAggService;
 import reactor.core.publisher.Mono;
 
