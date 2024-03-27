@@ -37,12 +37,12 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Mono<TaskStatistic> getStatistic(String userAggregateId) {
-        // TODO: implement when task service is ready
-        var tempData = TaskStatistic.TaskStatisticByStatus.builder().build();
-        return Mono.just(TaskStatistic.builder()
-                .overallTaskStatistic(tempData)
-                .assignedTaskStatistic(tempData)
-                .build());
+        return taskRepository.countAllTasksByStatusForUser(userAggregateId)
+                .zipWith(taskRepository.countAssignedTasksByStatusForUser(userAggregateId))
+                .map(tuple -> TaskStatistic.builder()
+                        .overallTaskStatistic(TaskMapper.fromDocToDTO(tuple.getT1()))
+                        .assignedTaskStatistic(TaskMapper.fromDocToDTO(tuple.getT2()))
+                        .build());
     }
 
     @Override

@@ -13,4 +13,5 @@ public interface TaskRepository extends ReactiveMongoRepository<TaskDocument, St
     Mono<Boolean> existsByAggregateId(String aggregateId);
 
     Flux<TaskDocument> findByBoardId(String boardId);
+
 }

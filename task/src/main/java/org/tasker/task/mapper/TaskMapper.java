@@ -3,6 +3,8 @@ package org.tasker.task.mapper;
 import org.tasker.common.models.domain.TaskAggregate;
 import org.tasker.common.models.domain.TaskDocument;
 import org.tasker.common.models.dto.TaskDto;
+import org.tasker.common.models.dto.TaskStatistic;
+import org.tasker.task.model.domain.TaskStatisticProjection;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -41,6 +43,16 @@ public final class TaskMapper {
                 .status(taskDocument.getStatus())
                 .assigneeIds(taskDocument.getAssigneeIds())
                 .boardId(taskDocument.getBoardId())
+                .build();
+    }
+
+    public static TaskStatistic.TaskStatisticByStatus fromDocToDTO(TaskStatisticProjection doc) {
+        return TaskStatistic.TaskStatisticByStatus.builder()
+                .toDoNum(doc.getToDoNum())
+                .inProgressNum(doc.getInProgressNum())
+                .inRevisionNum(doc.getInRevisionNum())
+                .doneNum(doc.getDoneNum())
+                .archivedNum(doc.getArchivedNum())
                 .build();
     }
 }

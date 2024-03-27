@@ -38,7 +38,6 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public Mono<BoardStatistic> getStatistic(String userAggregateId) {
-        // TODO: implement when board service is ready
         return Mono.just(BoardStatistic.builder()
                 .createdNum(1)
                 .joinedNum(1)

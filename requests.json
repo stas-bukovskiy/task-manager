@@ -175,5 +175,10 @@
     "data": {
       "task_id": "task_id"
     }
+  },
+  {
+    "correlation_id": "correlation_id",
+    "type": "get_user_statistic",
+    "data": {}
   }
 ]

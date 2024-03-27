@@ -123,12 +123,10 @@ public class TaskRequestConsumer {
 
     private void handle(GetStatisticQuery query, String routingKey) {
         taskService.getStatistic(query.userAggregateId())
-                .zipWith(boardService.getStatistic(query.userAggregateId()))
-                .map(statistics -> GetStatisticResponse.builder()
+                .map(taskStatistic -> GetStatisticResponse.builder()
                         .httpCode(HttpStatus.OK.value())
                         .data(Statistic.builder()
-                                .taskStatistic(statistics.getT1())
-                                .boardStatistic(statistics.getT2())
+                                .taskStatistic(taskStatistic)
                                 .build())
                         .build())
                 .onErrorResume(ex -> {
