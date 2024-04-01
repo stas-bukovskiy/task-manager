@@ -77,7 +77,7 @@
           <q-item-section avatar class="justify-center items-center">
             <q-icon name="logout"/>
           </q-item-section>
-          <q-item-section>Logout</q-item-section>
+          <q-item-section @click.prevent="onLogout">Logout</q-item-section>
         </q-item>
       </q-list>
     </q-drawer>
@@ -87,14 +87,26 @@
 <script>
 import {useQuasar} from 'quasar'
 import {ref} from 'vue'
-
+import {mapActions} from "vuex";
+import {LOGOUT_ACTION} from "src/store/constants";
+// const store = useStore()
+// const token = store.getters["auth/token"]
 export default {
   setup() {
     const $q = useQuasar()
 
     return {
+      // token: token,
       drawerLeft: ref($q.screen.width > 700),
       drawerRight: ref($q.screen.width > 500)
+    }
+  },
+  methods: {
+    ...mapActions('auth', {
+      logout: LOGOUT_ACTION
+    }),
+    onLogout() {
+      this.logout()
     }
   }
 }
