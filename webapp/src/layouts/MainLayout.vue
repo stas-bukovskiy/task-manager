@@ -1,15 +1,5 @@
 <template>
   <q-layout class="rounded-borders q-ma-md" view="lHh lpR lFf">
-    <q-header class="bg-primary text-white q-ma-md q-ml-lg">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar font-size="52px" icon="assessment" size="60px">
-          </q-avatar>
-          Title
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-header>
-
     <q-drawer
       v-model="drawerLeft"
       :breakpoint="700"
@@ -58,17 +48,24 @@
             </q-item-section>
           </template>
 
-          <q-item v-ripple clickable>
-            <q-item-section>Board 1</q-item-section>
+          <q-item v-for="board in boards" :key="board.id" v-ripple clickable>
+            <q-item-section>
+              <router-link v-slot="{ navigate }" :to="{ name: 'board', params: { id: board.id } }" custom>
+                <div @click="navigate">
+                  {{ board.title }}
+                </div>
+              </router-link>
+            </q-item-section>
           </q-item>
 
-          <q-item v-ripple clickable>
-            <q-item-section>Board 2</q-item-section>
-          </q-item>
-
-          <q-item v-ripple clickable>
-            <q-item-section>Board 3</q-item-section>
-          </q-item>
+          <q-item-section>
+            <q-item v-ripple clickable @click="openCreateBoard">
+              <q-item-section avatar class="justify-center items-center">
+                <q-icon name="add"/>
+              </q-item-section>
+              <q-item-section>New board</q-item-section>
+            </q-item>
+          </q-item-section>
         </q-expansion-item>
 
         <q-separator/>
@@ -81,34 +78,60 @@
         </q-item>
       </q-list>
     </q-drawer>
+
+    <q-dialog v-model="createBoardModal" persistent>
+      <NewBoardModal/>
+    </q-dialog>
+
+    <q-page-container>
+      <router-view/>
+    </q-page-container>
   </q-layout>
 </template>
 
 <script>
 import {useQuasar} from 'quasar'
 import {ref} from 'vue'
-import {mapActions} from "vuex";
-import {LOGOUT_ACTION} from "src/store/constants";
-// const store = useStore()
-// const token = store.getters["auth/token"]
+import {mapActions, mapGetters} from "vuex";
+import NewBoardModal from "components/NewBoardModal.vue";
+
 export default {
+  components: {
+    NewBoardModal
+  },
   setup() {
-    const $q = useQuasar()
+    const $q = useQuasar();
+    const drawerLeft = ref($q.screen.width > 700);
+    const drawerRight = ref($q.screen.width > 500);
 
     return {
-      // token: token,
-      drawerLeft: ref($q.screen.width > 700),
-      drawerRight: ref($q.screen.width > 500)
+      drawerLeft,
+      drawerRight
+    };
+  },
+  data() {
+    return {
+      createBoardModal: false,
+      boards: [],
     }
   },
   methods: {
-    ...mapActions('auth', {
-      logout: LOGOUT_ACTION
-    }),
+    ...mapActions('auth', ["logout"]),
+    ...mapActions('boards', ["fetchBoards"]),
+    ...mapGetters('boards', ['getBoards']),
+
     onLogout() {
       this.logout()
+    },
+    openCreateBoard() {
+      this.createBoardModal = true
     }
-  }
+  },
+  mounted() {
+    this.fetchBoards().then(() => {
+      this.boards = this.getBoards()
+    })
+  },
 }
 </script>
 

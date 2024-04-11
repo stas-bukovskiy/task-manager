@@ -1,6 +1,9 @@
 import {store} from 'quasar/wrappers'
 import {createStore} from 'vuex'
 import auth from "src/store/auth";
+import boards from "src/store/boards";
+import users from "src/store/users";
+import tasks from "src/store/tasks";
 
 // import example from './module-example'
 
@@ -16,7 +19,10 @@ import auth from "src/store/auth";
 export default store(function () {
   return createStore({
     modules: {
-      auth
+      auth,
+      boards,
+      users,
+      tasks
     },
 
     // enable strict mode (adds overhead!)

@@ -1,7 +1,6 @@
 import {route} from 'quasar/wrappers'
 import {createRouter, createWebHistory} from 'vue-router'
 import routes from './routes'
-import {useStore} from "vuex";
 
 export default route(function (/* { store, ssrContext } */) {
   const router = createRouter({
@@ -9,16 +8,16 @@ export default route(function (/* { store, ssrContext } */) {
     routes,
   })
 
-  router.beforeEach((to, from, next) => {
-    const store = useStore()
-    const isNotAuthenticated = !store.state.auth.token;
-
-    if (isNotAuthenticated && !to.path.startsWith("/auth")) {
-      next('/auth/login');
-    } else {
-      next();
-    }
-  });
+  // router.beforeEach((to, from, next) => {
+  //   const store = useStore()
+  //   const isNotAuthenticated = !store.state.auth.token;
+  //
+  //   if (isNotAuthenticated && !to.path.startsWith("/auth")) {
+  //     next('/auth/login');
+  //   } else {
+  //     next();
+  //   }
+  // });
 
 
   return router

@@ -1,4 +1,4 @@
-import {LOGIN_ACTION, LOGOUT_ACTION, SET_TOKEN_MUTATION, SIGNUP_ACTION} from "src/store/constants";
+import {LOGIN_ACTION, SET_TOKEN_MUTATION, SIGNUP_ACTION} from "src/store/constants";
 import axios from "axios";
 
 export default {
@@ -44,7 +44,7 @@ export default {
       throw new Error(error.response?.data?.message || error.message);
     }
   },
-  [LOGOUT_ACTION](context) {
+  logout(context) {
     context.commit(SET_TOKEN_MUTATION, {
       token: '',
       user: {

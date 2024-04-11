@@ -63,9 +63,9 @@ const router = useRouter();
 
 const store = useStore();
 
-const username = ref(null)
+const username = ref('test@mail.com')
 
-const password = ref(null);
+const password = ref('password');
 const showPassword = ref(false);
 
 const togglePasswordVisibility = () => {
